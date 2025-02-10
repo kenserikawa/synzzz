@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* General styling */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            color: gray;
+        }
+
+        /* Piano container for landscape mode */
+        .piano-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: rotate(-90deg); 
+            background-color: #333;
+            border-top-right-radius: 10px;
+            border-top-left-radius: 10px;
+        }
+
+        .wave-selector {
+            padding-top: 20px;
+        }
+
+        .wave-selector label {
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .wave-selector input,
+        .wave-selector button {
+            font-size: 16px;
+            padding: 5px 10px;
+        }
+
+        #wave-display {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .piano {
+            display: flex;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 20px  rgba(0,0,0,0.9);
+        }
+
+        .key {
+            width: 50px;
+            height: 180px; /* Adjust key size for better fit */
+            border: 1px solid #000;
+            border-radius: 0 0 5px 5px;
+            margin: 0 2px;
+            background-color: #fff;
+            transition: all 0.1s ease;
+            border-top: 4px solid black;
+            border-top: 4px solid black;
+            box-shadow: 0 4px rgba(0,0,0,0.9);
+        }
+
+        .key.black {
+            background-color: #1d1d1d;
+            height: 120px; /* Shorter black keys */
+            width: 30px; /* Narrower black keys */
+            margin-left: -15px; /* Overlap with white keys */
+            margin-right: -15px; 
+            z-index: 1; /* Ensure black keys are on top */
+            border-bottom-right-radius: inherit;
+            border-bottom: 4px solid #000000;
+            border-bottom-left-radius: inherit;
+        }
+
+        .key.active,
+        .key.black.active {
+            background-color: #ddd;
+        }
+
+        .key.black.active {
+            background-color: #333;
+        }
+
+        @media screen and (orientation: landscape) and (max-width: 768px) {
+          body {
+              display: none;
+          }
+          #landscape-warning {
+              display: flex; 
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              text-align: center;
+              background-color: #ffcccc;
+              color: #333; 
+              font-size: 20px; 
+              font-weight: bold; 
+          }
+      }
+    </style>
+</head>
+<body>
+    <!-- Warning message for mobile users in landscape -->
+    <div id="landscape-warning" style="display:none;">
+      Please rotate your device back to portrait mode for the best experience!
+    </div>
+
+    <!-- Piano container -->
+    <div class="piano-container">
+      <div class="wave-selector">
+        <select id="wave-type">
+            <option value="sine">∿∿</option>
+            <option value="square">▃▇▃▇</option>
+            <option value="triangle">◺◿</option>
+            <option value="sawtooth">◿◿◿</option>
+        </select>
+        D: <input type="checkbox" id="delay-toggle"> 
+        R: <input type="checkbox" id="reverb-toggle"> 
+        C: <input type="checkbox" id="chorus-toggle"> 
+      </div>
+      <div class="piano">
+<!--         <div class="key" data-note="C"></div>
+        <div class="key black" data-note="C#"></div>
+        <div class="key" data-note="D"></div>
+        <div class="key black" data-note="D#"></div>
+        <div class="key" data-note="E"></div>
+        <div class="key" data-note="F"></div>
+        <div class="key black" data-note="F#"></div>
+        <div class="key" data-note="G"></div>
+        <div class="key black" data-note="G#"></div>
+        <div class="key" data-note="A"></div>
+        <div class="key black" data-note="A#"></div>
+        <div class="key" data-note="B"></div> -->
+
+        <div class="key" data-note="C1"></div>
+        <div class="key black" data-note="C#1"></div>
+        <div class="key" data-note="D1"></div>
+        <div class="key black" data-note="D#1"></div>
+        <div class="key" data-note="E1"></div>
+        <div class="key" data-note="F1"></div>
+        <div class="key black" data-note="F#1"></div>
+        <div class="key" data-note="G1"></div>
+        <div class="key black" data-note="G#1"></div>
+        <div class="key" data-note="A1"></div>
+        <div class="key black" data-note="A#1"></div>
+        <div class="key" data-note="B1"></div>
+        
+        <div class="key" data-note="C2"></div>
+        <div class="key black" data-note="C#2"></div>
+        <div class="key" data-note="D2"></div>
+        <div class="key black" data-note="D#2"></div>
+        <div class="key" data-note="E2"></div>
+       <!--  <div style="padding-left: 10px;">👾</div> -->
+        
+        <!--    
+        <div class="key" data-note="F2"></div>
+        <div class="key black" data-note="F#2"></div>
+        <div class="key" data-note="G2"></div>
+        <div class="key black" data-note="G#2"></div>
+        <div class="key" data-note="A2"></div>
+        <div class="key black" data-note="A#2"></div>
+        <div class="key" data-note="B2"></div> -->
+    </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="./script.js"></script>
+
+</body>
+</html>
