@@ -48,15 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const waveformContext = waveformCanvas.getContext("2d");
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
 
     function drawWaveform() {
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+  
         waveformContext.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
         analyser.getByteTimeDomainData(dataArray);
 
         waveformContext.lineWidth = 2;
-        waveformContext.strokeStyle = "rgb(255, 255, 255)";
+        waveformContext.strokeStyle = "rgb(42, 189, 28)";
 
         waveformContext.beginPath();
 
@@ -208,6 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
           0.001,
           audioContext.currentTime + releaseTime
         );
+
+        drawWaveform()
     }
 
     keys.forEach(key => {
@@ -296,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     const baseFrequency = 130.81; // C2
     const numOctaves = 2;
   
@@ -321,44 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
         noteFrequencies[noteWithOctave] = frequency * octaveMultiplier;
       });
     }
-
-    for (let octave = 0; octave < numOctaves; octave++) {
-        notes.forEach(note => {
-          const noteWithOctave = note + (octave + 2);
-          const isBlackKey = note.includes('#');
-          const key = document.createElement('div');
-          key.classList.add('key');
-          if (isBlackKey) key.classList.add('black');
-          key.setAttribute('data-note', noteWithOctave);
-    
-          key.addEventListener('mousedown', () => {
-            const frequency = noteFrequencies[noteWithOctave];
-            playNote(frequency);
-            key.classList.add('active');
-          });
-    
-          key.addEventListener('mouseup', () => key.classList.remove('active'));
-          key.addEventListener('mouseleave', () => key.classList.remove('active'));
-    
-          // Touch support
-          key.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const frequency = noteFrequencies[noteWithOctave];
-            playNote(frequency);
-            key.classList.add('active');
-          });
-    
-          key.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            key.classList.remove('active');
-          });
-    
-          combinedPiano.appendChild(key);
-        });
-    }
-
-
-    drawWaveform()
 });
   
 
