@@ -40,19 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const sustainLevel = 7;
     const releaseTime = 2;
 
-    let isMouseDown = false;
-    let triggeredKeys = new Set();
-    
-    // OSCILLATOR VIEWER ...
     const waveformCanvas = document.getElementById("waveformCanvas");
     const waveformContext = waveformCanvas.getContext("2d");
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
 
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    let isMouseDown = false;
+    let triggeredKeys = new Set();
+    
+    // OSCILLATOR VIEWER ...
+
     function drawWaveform() {
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-  
         waveformContext.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
         analyser.getByteTimeDomainData(dataArray);
 
@@ -152,6 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
           audioContext.currentTime + attackTime + decayTime
         );
 
+        // keep analyser before anything else !important :)
+        oscillator.connect(analyser);
+
         oscillator.connect(gainNode);
 
         let currentNode = gainNode;
@@ -229,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
             key.classList.remove('active');
         });
 
-        // Add touch support for mobile devices
         key.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const note = key.getAttribute('data-note');
@@ -298,33 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
     });
-
-    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const baseFrequency = 130.81; // C2
-    const numOctaves = 2;
-  
-    for (let octave = 0; octave < numOctaves; octave++) {
-      const octaveMultiplier = Math.pow(2, octave);
-      notes.forEach(note => {
-        const noteWithOctave = note + (octave + 2); // Octaves starting from 2
-        let frequency;
-        switch (note) {
-          case 'C': frequency = 130.81; break;
-          case 'C#': frequency = 138.59; break;
-          case 'D': frequency = 146.83; break;
-          case 'D#': frequency = 155.56; break;
-          case 'E': frequency = 164.81; break;
-          case 'F': frequency = 174.61; break;
-          case 'F#': frequency = 185.00; break;
-          case 'G': frequency = 196.00; break;
-          case 'G#': frequency = 207.65; break;
-          case 'A': frequency = 220.00; break;
-          case 'A#': frequency = 233.08; break;
-          case 'B': frequency = 246.94; break;
-        }
-        noteFrequencies[noteWithOctave] = frequency * octaveMultiplier;
-      });
-    }
 });
   
 

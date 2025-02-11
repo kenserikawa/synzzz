@@ -22,25 +22,32 @@
 
         <div class="piano-container">
             <div class="wave-selector">
-                <select class="wave-type" id="wave-type">
-                    <option value="sine">∿∿</option>
-                    <option value="square">▃▇▃▇</option>
-                    <option value="triangle">◺◿</option>
-                    <option value="sawtooth">◿◿◿</option>
-                </select>
-                <label class="synth-button">
-                    <input type="checkbox" id="delay-toggle"> 
-                    <span class="button-face"></span>
-                </label>
-                <label class="synth-button">
-                    <input type="checkbox" id="reverb-toggle"> 
-                    <span class="button-face"></span>
-                </label>
-                <label class="synth-button">
-                    <input type="checkbox" id="chorus-toggle"> 
-                    <span class="button-face"></span>
-                </label>
+                <div class="wave-modules">
+                    <select class="wave-type" id="wave-type">
+                        <option value="sine">∿∿</option>
+                        <option value="square">▃▇▃▇</option>
+                        <option value="triangle">◺◿</option>
+                        <option value="sawtooth">◿◿◿</option>
+                    </select>
+                    <label class="synth-button">
+                        <input type="checkbox" id="delay-toggle"> 
+                        <span class="button-face"></span>
+                    </label>
+                    <label class="synth-button">
+                        <input type="checkbox" id="reverb-toggle"> 
+                        <span class="button-face"></span>
+                    </label>
+                    <label class="synth-button">
+                        <input type="checkbox" id="chorus-toggle"> 
+                        <span class="button-face"></span>
+                    </label>
+                </div>
+                <div class="oscillator-wave-viewer">
+                    <canvas id="waveformCanvas" width="100" height="50"></canvas>
+                </div>
             </div>
+
+  
       
             <div class="piano">
         <!--         
@@ -89,7 +96,6 @@
             </div>
         </div>
     </div>
-    <canvas id="waveformCanvas" width="600" height="200"></canvas>
     <script src="./script.js"></script>
 
 </body>

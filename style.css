@@ -39,7 +39,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* transform: rotate(-90deg); */ 
+            transform: rotate(-90deg); 
             background-color: #333;
             border-top-right-radius: 10px;
             border-top-left-radius: 10px;
@@ -47,6 +47,8 @@
 
         .wave-selector {
             padding-top: 20px;
+            margin: auto;
+            display: -webkit-inline-box;
         }
 
         .wave-selector label {
@@ -65,9 +67,16 @@
             margin-right: 20px;
         }
 
-        #wave-display {
-            font-size: 18px;
-            font-weight: bold;
+        .wave-modules {
+            padding-top: 20px;
+        }
+        
+        .oscillator-wave-viewer {
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 20%;
+            background-color: #141414;
+            border-top: 3px solid rgb(85, 0, 0);
         }
 
         .piano {
@@ -136,6 +145,7 @@
             border: 1px solid #555;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 2px black;
         }
 
         .button-face::after {
