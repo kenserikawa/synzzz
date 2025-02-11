@@ -43,10 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
             lfo = audioContext.createOscillator();
             lfo.type = 'sine';
-            lfo.frequency.value = 0.5; // LFO frequency
+            lfo.frequency.value = 0.5;
         
             const lfoGain = audioContext.createGain();
-            lfoGain.gain.value = 0.002; // Modulation depth
+            lfoGain.gain.value = 0.032;
         
             lfo.connect(lfoGain);
             lfoGain.connect(chorusNode.delayTime);

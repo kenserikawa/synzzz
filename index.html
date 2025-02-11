@@ -6,6 +6,9 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <title>👾 Synzzz</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
     <style>
         /* General styling */
         body {
@@ -20,7 +23,30 @@
             color: gray;
         }
 
-        /* Piano container for landscape mode */
+        .pixel-font {
+            font-family: "Tiny5", serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 5px 0;
+            z-index: 1000; 
+        }
+        
+        .main-container {
+            flex-grow: 1;
+            margin: 23rem;
+        }
+
         .piano-container {
             display: flex;
             flex-direction: column;
@@ -45,6 +71,10 @@
         .wave-selector button {
             font-size: 16px;
             padding: 5px 10px;
+        }
+
+        .wave-type {
+            margin-right: 20px;
         }
 
         #wave-display {
@@ -94,6 +124,54 @@
             background-color: #333;
         }
 
+        .synth-button {
+            display: inline-block;
+            position: relative;
+            width: 30px;
+            height: 30px;
+        }
+
+        .synth-button input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .button-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            border-radius: 50%;
+            border: 1px solid #555;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .button-face::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background-color: rgb(48, 0, 0);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .synth-button input:checked + .button-face {
+            background-color: #2f2f2f;
+        }
+
+        .synth-button input:checked + .button-face::after {
+            background-color: #f00;
+            box-shadow: 0 0 5px #f00;
+        }
+
         @media screen and (orientation: landscape) and (max-width: 768px) {
           body {
               display: none;
@@ -113,74 +191,83 @@
     </style>
 </head>
 <body>
-    <!-- Warning message for mobile users in landscape -->
-    <div id="landscape-warning" style="display:none;">
-      Please rotate your device back to portrait mode for the best experience!
+    <div class="navbar pixel-font">SYNZZZZ</div>
+
+    <div class="main-container">
+
+        <div id="landscape-warning" style="display:none;">
+        Please rotate your device back to portrait mode for the best experience!
+        </div>
+
+        <div class="piano-container">
+            <div class="wave-selector">
+                <select class="wave-type" id="wave-type">
+                    <option value="sine">∿∿</option>
+                    <option value="square">▃▇▃▇</option>
+                    <option value="triangle">◺◿</option>
+                    <option value="sawtooth">◿◿◿</option>
+                </select>
+                <label class="synth-button">
+                    <input type="checkbox" id="delay-toggle"> 
+                    <span class="button-face"></span>
+                </label>
+                <label class="synth-button">
+                    <input type="checkbox" id="reverb-toggle"> 
+                    <span class="button-face"></span>
+                </label>
+                <label class="synth-button">
+                    <input type="checkbox" id="chorus-toggle"> 
+                    <span class="button-face"></span>
+                </label>
+            </div>
+            <div class="piano">
+        <!--         
+                # Lowest notes
+                <div class="key" data-note="C"></div>
+                <div class="key black" data-note="C#"></div>
+                <div class="key" data-note="D"></div>
+                <div class="key black" data-note="D#"></div>
+                <div class="key" data-note="E"></div>
+                <div class="key" data-note="F"></div>
+                <div class="key black" data-note="F#"></div>
+                <div class="key" data-note="G"></div>
+                <div class="key black" data-note="G#"></div>
+                <div class="key" data-note="A"></div>
+                <div class="key black" data-note="A#"></div>
+                <div class="key" data-note="B"></div> 
+        -->
+                <div class="key" data-note="C1"></div>
+                <div class="key black" data-note="C#1"></div>
+                <div class="key" data-note="D1"></div>
+                <div class="key black" data-note="D#1"></div>
+                <div class="key" data-note="E1"></div>
+                <div class="key" data-note="F1"></div>
+                <div class="key black" data-note="F#1"></div>
+                <div class="key" data-note="G1"></div>
+                <div class="key black" data-note="G#1"></div>
+                <div class="key" data-note="A1"></div>
+                <div class="key black" data-note="A#1"></div>
+                <div class="key" data-note="B1"></div>
+                
+                <div class="key" data-note="C2"></div>
+                <div class="key black" data-note="C#2"></div>
+                <div class="key" data-note="D2"></div>
+                <div class="key black" data-note="D#2"></div>
+                <div class="key" data-note="E2"></div>  
+        <!--    
+                # Highest notes        
+                <div class="key" data-note="F2"></div>
+                <div class="key black" data-note="F#2"></div>
+                <div class="key" data-note="G2"></div>
+                <div class="key black" data-note="G#2"></div>
+                <div class="key" data-note="A2"></div>
+                <div class="key black" data-note="A#2"></div>
+                <div class="key" data-note="B2"></div> 
+        -->
+            </div>
+        </div>
     </div>
 
-    <!-- Piano container -->
-    <div class="piano-container">
-      <div class="wave-selector">
-        <select id="wave-type">
-            <option value="sine">∿∿</option>
-            <option value="square">▃▇▃▇</option>
-            <option value="triangle">◺◿</option>
-            <option value="sawtooth">◿◿◿</option>
-        </select>
-        D: <input type="checkbox" id="delay-toggle"> 
-        R: <input type="checkbox" id="reverb-toggle"> 
-        C: <input type="checkbox" id="chorus-toggle"> 
-      </div>
-      <div class="piano">
-<!--         
-        # Lowest notes
-        <div class="key" data-note="C"></div>
-        <div class="key black" data-note="C#"></div>
-        <div class="key" data-note="D"></div>
-        <div class="key black" data-note="D#"></div>
-        <div class="key" data-note="E"></div>
-        <div class="key" data-note="F"></div>
-        <div class="key black" data-note="F#"></div>
-        <div class="key" data-note="G"></div>
-        <div class="key black" data-note="G#"></div>
-        <div class="key" data-note="A"></div>
-        <div class="key black" data-note="A#"></div>
-        <div class="key" data-note="B"></div> 
--->
-
-        <div class="key" data-note="C1"></div>
-        <div class="key black" data-note="C#1"></div>
-        <div class="key" data-note="D1"></div>
-        <div class="key black" data-note="D#1"></div>
-        <div class="key" data-note="E1"></div>
-        <div class="key" data-note="F1"></div>
-        <div class="key black" data-note="F#1"></div>
-        <div class="key" data-note="G1"></div>
-        <div class="key black" data-note="G#1"></div>
-        <div class="key" data-note="A1"></div>
-        <div class="key black" data-note="A#1"></div>
-        <div class="key" data-note="B1"></div>
-        
-        <div class="key" data-note="C2"></div>
-        <div class="key black" data-note="C#2"></div>
-        <div class="key" data-note="D2"></div>
-        <div class="key black" data-note="D#2"></div>
-        <div class="key" data-note="E2"></div>
-        
-<!--    
-        # Highest notes        
-        <div class="key" data-note="F2"></div>
-        <div class="key black" data-note="F#2"></div>
-        <div class="key" data-note="G2"></div>
-        <div class="key black" data-note="G#2"></div>
-        <div class="key" data-note="A2"></div>
-        <div class="key black" data-note="A#2"></div>
-        <div class="key" data-note="B2"></div> 
--->
-    </div>
-    </div>
-
-    <!-- JavaScript -->
     <script src="./script.js"></script>
 
 </body>
