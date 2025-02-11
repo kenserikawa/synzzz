@@ -27,12 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const delayToggle = document.getElementById('delay-toggle');
-        let delayNode = null;
         const reverbToggle = document.getElementById('reverb-toggle');
-        let convolverNode = null;
         const chorusToggle = document.getElementById('chorus-toggle');
+        
+        let delayNode = null;
+        let convolverNode = null;
         let chorusNode = null;
         let lfo = null;
+
+        const attackTime = 0.12;
+        const decayTime = 2;
+        const sustainLevel = 7;
+        const releaseTime = 2;
 
         let isMouseDown = false;
         let triggeredKeys = new Set();
@@ -43,10 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
             lfo = audioContext.createOscillator();
             lfo.type = 'sine';
-            lfo.frequency.value = 0.5;
+            lfo.frequency.value = 1;
         
             const lfoGain = audioContext.createGain();
-            lfoGain.gain.value = 0.032;
+            lfoGain.gain.value = 0.32;
         
             lfo.connect(lfoGain);
             lfoGain.connect(chorusNode.delayTime);
@@ -97,6 +103,15 @@ document.addEventListener('DOMContentLoaded', () => {
             gainNode.gain.setValueAtTime(1, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
 
+            gainNode.gain.linearRampToValueAtTime(
+              1,
+              audioContext.currentTime + attackTime
+            );
+            gainNode.gain.exponentialRampToValueAtTime(
+              sustainLevel,
+              audioContext.currentTime + attackTime + decayTime
+            );
+
             oscillator.connect(gainNode);
 
             let currentNode = gainNode;
@@ -142,6 +157,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 1);
+
+            oscillator.stop(audioContext.currentTime + attackTime + decayTime + releaseTime);
+
+            gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+            gainNode.gain.setValueAtTime(
+              gainNode.gain.value,
+              audioContext.currentTime
+            );
+            gainNode.gain.exponentialRampToValueAtTime(
+              0.001,
+              audioContext.currentTime + releaseTime
+            );
         }
 
     keys.forEach(key => {
