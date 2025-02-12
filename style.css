@@ -78,7 +78,8 @@
             margin-top: 5px;
             border-radius: 20%;
             background-color: #141414;
-            border-top: 3px solid rgb(85, 0, 0);
+            border-top: 3px solid rgb(40, 0, 0);
+            transition: all 0.1s infinite;
         }
 
         div #waveformCanvas {
@@ -223,7 +224,7 @@
 
         .chorus.synth-button input:checked + .button-face::after {
             background-color: rgb(95, 199, 255);
-            box-shadow: 0 0 5px rgb(231, 255, 252));
+            box-shadow: 0 0 5px rgb(49, 255, 231);
         }
 
 

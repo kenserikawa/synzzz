@@ -133,6 +133,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return convolverNode;
     }
 
+    function highlghtAnimation() {
+      let elements = document.getElementsByClassName('oscillator-wave-viewer');
+
+      for (let i = 0; i < elements.length; i++) {
+          let element = elements[i];
+          element.style.borderTop = "3px solid rgb(60, 0, 0)";
+          setTimeout(() => {
+              element.style.borderTop = "3px solid rgb(40, 0, 0)";
+          }, 28000);
+      }
+    }
+
     function playNote(frequency) {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -213,6 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
           audioContext.currentTime + releaseTime
         );
 
+
+        highlghtAnimation();
         drawWaveform()
     }
 
