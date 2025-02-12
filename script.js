@@ -115,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return delayNode;
     }
 
-    // Function to create and load an impulse response for the reverb
     async function createReverbNode() {
         convolverNode = audioContext.createConvolver();
 
@@ -275,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isMouseDown = true;
     });
     
-
+    // FX
     delayToggle.addEventListener('change', () => {
         if (!delayToggle.checked && delayNode) {
           delayNode.disconnect();
@@ -302,19 +301,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-  
-
-function ensureDocumentIsScrollable() {
-  const isScrollable =
-    document.documentElement.scrollHeight > window.innerHeight;
-  
-  if (!isScrollable) {
-
-    document.documentElement.style.setProperty(
-      "height",
-      "calc(100vh + 1px)",
-      "important"
-    );
-  }
-}
-
