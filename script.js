@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyser.getByteTimeDomainData(dataArray);
 
         waveformContext.lineWidth = 2;
-        waveformContext.strokeStyle = "rgb(42, 189, 28)";
+        waveformContext.strokeStyle = "rgb(252, 18, 96, 0.8)";
 
         waveformContext.beginPath();
 
@@ -300,4 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
     });
+
+    drawWaveform();
 });
