@@ -29,21 +29,32 @@
                         <option value="triangle">◺◿</option>
                         <option value="sawtooth">◿◿◿</option>
                     </select>
-                    <label class="delay synth-button">
-                        <input type="checkbox" id="delay-toggle"> 
-                        <span class="delay button-face"></span>
-                    </label>
-                    <label class="reverb synth-button">
-                        <input type="checkbox" id="reverb-toggle"> 
-                        <span class="reverb button-face"></span>
-                    </label>
-                    <label class="chorus synth-button">
-                        <input type="checkbox" id="chorus-toggle"> 
-                        <span class="chorus button-face"></span>
-                    </label>
+                    <div class="effect-module">
+                        <label class="delay synth-button">
+                            <input type="checkbox" id="delay-toggle"> 
+                            <span class="delay button-face"></span>
+                        </label>
+                        <input id="delay-fader" type="range" min="10" max="90" orient="vertical">
+                    </div>
+                    <div class="effect-module">
+                        <label class="reverb synth-button">
+                            <input type="checkbox" id="reverb-toggle"> 
+                            <span class="reverb button-face"></span>
+                        </label>
+                        <input id="reverb-fader" type="range" min="1" max="9" orient="vertical">
+                    </div>
+                    <div class="effect-module">
+                        <label class="chorus synth-button">
+                            <input type="checkbox" id="chorus-toggle"> 
+                            <span class="chorus button-face"></span>
+                        </label>
+                        <input id="chorus-fader" type="range" min="10" max="90" orient="vertical">
+                    </div>
                 </div>
-                <div class="oscillator-wave-viewer">
-                    <canvas id="waveformCanvas" width="100" height="50"></canvas>
+                <div class="audio-visuals">
+                    <div class="oscillator-wave-viewer">
+                        <canvas id="waveformCanvas" width="100" height="50"></canvas>
+                    </div>
                 </div>
             </div>
 

@@ -1,7 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    var audioContext;
+
+    function initializeAudioContext() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Any other audio context setup you need goes here
+        console.log('AudioContext initialized');
+    }
+
+    initializeAudioContext();
+
     const keys = document.querySelectorAll('.key');
     const waveSelector = document.getElementById('wave-type');
+    const delayFader = document.getElementById('delay-fader');
+    const reverbFader = document.getElementById('reverb-fader');
 
     // Default wave type
     let currentWaveType = 'sine';
@@ -9,6 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update wave type when dropdown changes
     waveSelector.addEventListener('change', (event) => {
         currentWaveType = event.target.value; // Update the global wave type
+    });
+
+    let currentDelayTime = 0.3;
+    delayFader.addEventListener('input', (event) => {
+        currentDelayTime = event.target.value / 100;
+        createDelayNode(); 
+    });
+
+    let currentReverbTime = 1;        
+    reverbFader.addEventListener('input', (event) => {
+        currentReverbTime = event.target.value 
+        createReverbNode()
     });
 
     const noteFrequencies = {
@@ -104,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createDelayNode() {
         delayNode = audioContext.createDelay(5.0);
-        delayNode.delayTime.value = 0.3;
+        delayNode.delayTime.value = currentDelayTime; // 0.1 to 0.8?
     
         const feedbackNode = audioContext.createGain();
         feedbackNode.gain.value = 0.4; 
@@ -120,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Generate a simple impulse response (white noise decay)
         const sampleRate = audioContext.sampleRate;
-        const length = sampleRate * 2; // 2 seconds
+        const length = sampleRate * currentReverbTime; 
         const impulseBuffer = audioContext.createBuffer(2, length, sampleRate);
         for (let channel = 0; channel < impulseBuffer.numberOfChannels; channel++) {
             const channelData = impulseBuffer.getChannelData(channel);
@@ -210,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             gainNode.connect(audioContext.destination);
         }
+
         oscillator.start();
         oscillator.stop(audioContext.currentTime + 1);
 

@@ -53,12 +53,6 @@
             display: -webkit-inline-box;
         }
 
-        .wave-selector label {
-            font-size: 16px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
         .wave-selector input,
         .wave-selector button {
             font-size: 16px;
@@ -69,13 +63,68 @@
             margin-right: 20px;
         }
 
-        .wave-modules {
-            padding-top: 20px;
+        .effect-module {
+            display: inline-grid;
+            grid-template-rows: auto 1fr;
+            justify-items: center;
+            grid-template-columns: 0;
+            padding: 0px 15px;
         }
         
+        .delay-fader {
+            margin-top: 10px;
+            height: 100px;
+            width: 30px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 44px;
+            height: 5px;
+            background: #ddd;
+            border-right: 4px solid #212121;
+            border-radius: 10px;
+            outline: none;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            margin-top: 35px;
+            margin-bottom: 25px;
+            background-color: #3f3f3f;
+            box-shadow: -1px 0px 2px #191919;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgb(60, 60, 60);
+            box-shadow: -2px 0px 2px black;
+    
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid red;
+
+        }
+
+        .wave-modules {
+        }
+        .audio-visuals {
+            padding: 20px;
+        }
         .oscillator-wave-viewer {
             padding: 5px;
             margin-top: 5px;
+            max-height: 55px;
             border-radius: 20%;
             background-color: #141414;
             border-top: 3px solid rgb(40, 0, 0);
@@ -188,10 +237,10 @@
             bottom: 0;
             background-color: #333;
             border-radius: 50%;
-            border: 1px solid #555555a6;
+            border: 1px solid #2a2a2a;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0px 3px black;
+            box-shadow: 0px 3px #272727;
         }
 
         .button-face::after {
