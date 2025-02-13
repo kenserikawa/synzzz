@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
           element.style.borderTop = "3px solid rgb(60, 0, 0)";
           setTimeout(() => {
               element.style.borderTop = "3px solid rgb(40, 0, 0)";
-          }, 28000);
+          }, 4200);
       }
     }
 
