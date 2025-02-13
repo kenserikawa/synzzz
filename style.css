@@ -45,6 +45,7 @@
             border-top-right-radius: 10px;
             border-top-left-radius: 10px;
             border-top: 3px solid rgba(143, 143, 143, 0.203);
+            border-radius: 2px;
         }
 
         .wave-selector {
