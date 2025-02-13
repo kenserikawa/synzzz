@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentReverbTime = 1;        
     reverbFader.addEventListener('input', (event) => {
         currentReverbTime = event.target.value 
-        createReverbNode()
+        createReverbNode();
     });
 
     const noteFrequencies = {
