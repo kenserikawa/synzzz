@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initializeAudioContext() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        // Any other audio context setup you need goes here
         console.log('AudioContext initialized');
     }
 
@@ -15,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
 
-    // Default wave type
     let currentWaveType = 'sine';
 
     const waveforms = [
@@ -57,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentReverbTime = 1;        
     reverbFader.addEventListener('input', (event) => {
-        currentReverbTime = event.target.value 
+        currentReverbTime = event.target.value;
         createReverbNode();
     });
 
@@ -102,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let triggeredKeys = new Set();
     
     // OSCILLATOR VIEWER ...
-
     function drawWaveform() {
         waveformContext.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
         analyser.getByteTimeDomainData(dataArray);
@@ -198,25 +195,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function playNote(frequency) {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-
+        const rampValue = 0.001;
         oscillator.type = currentWaveType;
+
         oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
         gainNode.gain.setValueAtTime(1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+        gainNode.gain.exponentialRampToValueAtTime(rampValue, audioContext.currentTime + 1);
+        gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + attackTime);
+        gainNode.gain.exponentialRampToValueAtTime(sustainLevel,audioContext.currentTime + attackTime + decayTime);
 
-        gainNode.gain.linearRampToValueAtTime(
-          1,
-          audioContext.currentTime + attackTime
-        );
-        gainNode.gain.exponentialRampToValueAtTime(
-          sustainLevel,
-          audioContext.currentTime + attackTime + decayTime
-        );
-
-        // keep analyser before anything else !important :)
         oscillator.connect(analyser);
-
         oscillator.connect(gainNode);
 
         let currentNode = gainNode;
@@ -267,15 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
         oscillator.stop(audioContext.currentTime + attackTime + decayTime + releaseTime);
 
         gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-        gainNode.gain.setValueAtTime(
-          gainNode.gain.value,
-          audioContext.currentTime
-        );
-        gainNode.gain.exponentialRampToValueAtTime(
-          0.001,
-          audioContext.currentTime + releaseTime
-        );
-
+        gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(rampValue, audioContext.currentTime + releaseTime);
 
         highlghtAnimation();
         drawWaveform()
