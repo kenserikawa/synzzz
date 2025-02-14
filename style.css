@@ -64,12 +64,46 @@
             margin-right: 20px;
         }
 
+
+        .nav-button {
+            background-color: #3e3e3e;
+            border: none;
+            color: #222222;
+            font-size: 18px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            border-bottom: 2px solid black;
+        }
+        
+        .display {
+            flex-grow: 1;
+            text-align: center;
+            background-color: #222;
+            margin: 0 10px;
+            border-radius: 3px;
+        }
+        
+        .wave-icon {
+            display: block;
+            font-size: 24px;
+            color: rgb(255, 0, 0);
+        }
+        
+        .wave-name {
+            display: block;
+            color: #ddd;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
         .effect-module {
             display: inline-grid;
             grid-template-rows: auto 1fr;
             justify-items: center;
             grid-template-columns: 0;
             padding: 0px 15px;
+            margin: 2px;
         }
         
         .delay-fader {
@@ -118,6 +152,7 @@
         }
 
         .wave-modules {
+            margin: auto 10px;
         }
         .audio-visuals {
             padding: 20px;

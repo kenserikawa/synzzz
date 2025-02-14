@@ -18,9 +18,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Default wave type
     let currentWaveType = 'sine';
 
-    // Update wave type when dropdown changes
-    waveSelector.addEventListener('change', (event) => {
-        currentWaveType = event.target.value; // Update the global wave type
+    const waveforms = [
+        { icon: '∿', name: 'Sine', value: 'sine' },
+        { icon: '▇', name: 'Square', value: 'square' },
+        { icon: '◺', name: 'Triangle', value: 'triangle' },
+        { icon: '◿', name: 'Sawtooth', value: 'sawtooth' }
+    ];
+
+    let currentIndex = 0;
+
+    const display = document.querySelector('.display');
+    const leftButton = document.querySelector('.left');
+    const rightButton = document.querySelector('.right');
+
+    function updateDisplay() {
+        const currentWave = waveforms[currentIndex];
+        currentWaveType = currentWave.value;
+        display.innerHTML = `
+            <span class="wave-icon">${currentWave.icon}</span>
+        `;
+    }
+
+    leftButton.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + waveforms.length) % waveforms.length;
+        updateDisplay();
+    });
+
+    rightButton.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % waveforms.length;
+        updateDisplay();
     });
 
     let currentDelayTime = 0.3;
