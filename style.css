@@ -10,6 +10,15 @@
             color: gray;
         }
 
+
+        :root {
+            --sb-track-color: #232e3300;
+         /*    --sb-thumb-color: #6baf8da8; */
+         --sb-thumb-color: rgba(157, 51, 187, 0.796);
+            --sb-size: 14px;
+            --synth-base-color: #333;
+        }
+        
         .pixel-font {
             font-family: "Tiny5", serif;
             font-weight: 400;
@@ -44,7 +53,9 @@
             border-top-right-radius: 10px;
             border-top-left-radius: 10px;
             border-top: 3px solid rgba(143, 143, 143, 0.203);
-            border-radius: 2px;
+            border-top-right-radius: 10px;
+            border-top-left-radius: 10px;
+            background: linear-gradient(45deg, #333, rgba(40, 40, 40, 0.972));
         }
 
         .wave-selector {
@@ -166,11 +177,13 @@
             position: absolute; /* Position it relative to the .oscillator-wave-viewer */
             bottom: 0;          /* Align to the bottom */
             right: 0;           /* Align to the right */
-            background-color: rgba(0, 0, 0, 0.5);  /* Optional: Add a background for readability */
+            background-color: rgba(0, 0, 0, 0.3);  /* Optional: Add a background for readability */
             color: white;        /* Optional: Set text color */
             padding: 2px 4px;    /* Optional: Add some padding */
             font-size: 0.7em;    /* Optional: Adjust font size */
-            font-family: sans-serif;
+            border-top-left-radius: 30%;
+
+            border-bottom-right-radius: 100%;
         }
 
         .oscillator-wave-viewer {
@@ -190,7 +203,6 @@
 
         .piano {
             display: flex;
-            background-color: #333;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 20px  rgba(0,0,0,0.9);
@@ -212,6 +224,13 @@
             border-bottom-left-radius: inherit;
         }
 
+        .key:first-child {
+            border-top-left-radius: 10px;
+        }
+        .key:last-child {
+            border-top-right-radius: 10px;
+        }
+
         .key.black {
             background-color: #1d1d1d;
             height: 120px; 
@@ -226,7 +245,7 @@
 
         .key.active,
         .key.black.active {
-            background-color: #ddd;
+            background-color: #ff0808de;
         }
 
         .key.black.active {
@@ -339,9 +358,114 @@
             background-color: rgb(0, 255, 34);
             box-shadow: 0 0 5px rgb(0, 255, 47);
         }
+        #arrangement-view {
+            position: relative;
+            width: 100%;
+            height: 400px; /* Adjust as needed */
+            overflow: auto;
+            border: 1px solid #ccc;
+        }
+        
+
+        #arrangement-view::-webkit-scrollbar {
+            width: var(--sb-size)
+        }
+        
+        #arrangement-view::-webkit-scrollbar-track {
+            background: var(--sb-track-color);
+            border-radius: 3px;
+        }
+        
+        #arrangement-view::-webkit-scrollbar-thumb {
+            background: var(--sb-thumb-color);
+            border-radius: 3px;
+            
+        }
+        
+        @supports not selector(::-webkit-scrollbar) {
+            #arrangement-view {
+            scrollbar-color: var(--sb-thumb-color)
+                            var(--sb-track-color);
+            }
+        }
+        .grid-container {
+            position: relative;
+            min-height: 100%;
+            min-width: 100%;
+        }
+        
+        .arrangement-row {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 25px; /* Match your rowHeight */
+            border-bottom: 1px dashed rgba(64, 64, 64, 0.191);
+        }
+        
+        #cursor-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: red;
+            z-index: 1000;
+            pointer-events: none;
+            height:233%;
+        }
+
+        .note-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0e0e0;
+            border-right: 1px solid #ccc;
+            z-index: 2;
+        }
+        
+        .grid-line {
+            position: absolute;
+            background-color: #ddd;
+        }
+        
+        .grid-line.vertical {
+            top: 0;
+            bottom: 0;
+            width: 1px;
+        }
+        
+        .grid-line.horizontal {
+            left: 30px; /* Align with the end of note labels */
+            right: 0;
+            height: 1px;
+        }
+        
+        .arrangement-note {
+            position: absolute;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: move;
+            z-index: 10;
+            top: 2px; /* Center vertically in the row */
+            height: 21px; /* Slightly smaller than row height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .arrangement-note.dragging {
+            opacity: 0.7;
+        }
 
         @media screen and (orientation: landscape) and (max-width: 768px) {
-            body {
+      /*       body {
                 display: none;
             }
             #landscape-warning {
@@ -354,5 +478,5 @@
                 color: #333; 
                 font-size: 20px; 
                 font-weight: bold; 
-            }
+            } */
         }

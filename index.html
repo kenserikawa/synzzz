@@ -12,7 +12,8 @@
     <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body>
-    <div class="navbar pixel-font">SYNZZZZ</div>
+    <div class="navbar pixel-font">👾 SYNZZZ 👾</div>
+
 
     <div class="main-container">
 
@@ -55,17 +56,16 @@
                 <div class="audio-visuals">
                     <div class="oscillator-wave-viewer">
                         <canvas id="waveformCanvas" width="100" height="50"></canvas>
-                        <code class="canvas-label">wave</code>
+                        <code class="canvas-label pixel-font">OSC</code>
                     </div>
                     <div class="oscillator-wave-viewer">
                         <canvas id="eqCanvas" width="100" height="50"></canvas>
-                        <code class="canvas-label">eq</code>
+                        <code class="canvas-label pixel-font">EQ</code>
                     </div>
                 </div>
             </div>
       
             <div class="piano">
-                
                 <div class="key" data-note="C"></div>
                 <div class="key black" data-note="C#"></div>
                 <div class="key" data-note="D"></div>
@@ -91,13 +91,13 @@
                 <div class="key white-corner-border" data-note="A1"></div>
                 <div class="key black black-corner-border" data-note="A#1"></div>
                 <div class="key white-corner-border" data-note="B1"></div>
+                <!--    
                 
                 <div class="key white-corner-border" data-note="C2"></div>
                 <div class="key black black-corner-border" data-note="C#2"></div>
                 <div class="key white-corner-border" data-note="D2"></div>
                 <div class="key black black-corner-border" data-note="D#2"></div>
                 <div class="key white-corner-border" data-note="E2"></div>  
-        <!--    
                 # Highest notes        
                 <div class="key" data-note="F2"></div>
                 <div class="key black" data-note="F#2"></div>
@@ -110,9 +110,17 @@
             </div>
         </div>
     <div id="action-log"></div>
+        
+    <div class="controls">
+        <div id="bpm-display">120 BPM</div>
+        <button id="tap-button">Tap Tempo</button>
+        <button id="metronome-button">TICTAC</button>
+    </div>
     <div class="record-ui"> 
         <button id="record-button">Start Recording</button>
-        <div id="arrangement-view"></div>
+        <div id="arrangement-view">
+            <div id="cursor-line"></div>
+        </div>
         <button id="playback-button">Play Back</button>
         <button id="loop-button">Loop</button>
     </div>
