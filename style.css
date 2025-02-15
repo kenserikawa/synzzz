@@ -10,6 +10,15 @@
             color: gray;
         }
 
+
+        :root {
+            --sb-track-color: #232e3300;
+         /*    --sb-thumb-color: #6baf8da8; */
+         --sb-thumb-color: rgba(157, 51, 187, 0.796);
+            --sb-size: 14px;
+            --synth-base-color: #333;
+        }
+        
         .pixel-font {
             font-family: "Tiny5", serif;
             font-weight: 400;
@@ -236,7 +245,7 @@
 
         .key.active,
         .key.black.active {
-            background-color: #ddd;
+            background-color: #ff0808de;
         }
 
         .key.black.active {
@@ -357,6 +366,28 @@
             border: 1px solid #ccc;
         }
         
+
+        #arrangement-view::-webkit-scrollbar {
+            width: var(--sb-size)
+        }
+        
+        #arrangement-view::-webkit-scrollbar-track {
+            background: var(--sb-track-color);
+            border-radius: 3px;
+        }
+        
+        #arrangement-view::-webkit-scrollbar-thumb {
+            background: var(--sb-thumb-color);
+            border-radius: 3px;
+            
+        }
+        
+        @supports not selector(::-webkit-scrollbar) {
+            #arrangement-view {
+            scrollbar-color: var(--sb-thumb-color)
+                            var(--sb-track-color);
+            }
+        }
         .grid-container {
             position: relative;
             min-height: 100%;
@@ -379,8 +410,9 @@
             background-color: red;
             z-index: 1000;
             pointer-events: none;
+            height:233%;
         }
-        
+
         .note-label {
             position: absolute;
             left: 0;

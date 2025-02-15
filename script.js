@@ -7,6 +7,7 @@ function log(message) {
     logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
 
     var audioContext;
@@ -21,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const noteRows = { 
         'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
         'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
-        'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 
+        'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 , 'F#2': 30, 'G2': 31,
+        'G#2': 32, 'A2': 33, 'A#2': 34, 'B2': 35
     };
 
     const bpmDisplay = document.getElementById('bpm-display');
@@ -419,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         key.addEventListener('mousedown', () => {
             isMouseDown = true;
-            triggeredKeys.clear(); // Clear previously triggered keys
+            triggeredKeys.clear(); 
             if (!triggeredKeys.has(note)) {
                 playNote(noteFrequencies[note]);
                 triggeredKeys.add(note);
@@ -427,7 +429,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
       
-          // Trigger note on hover while holding mouse down
         key.addEventListener('mouseenter', () => {
             if (isMouseDown && !triggeredKeys.has(note)) {
                 playNote(noteFrequencies[note]);
@@ -436,6 +437,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });           
+
+    function findKeyNote(key) {
+        switch (key) {
+            case 'a': return 'C';
+            case 's': return 'D';
+            case 'd': return 'E';
+            case 'f': return 'F';
+            case 'g': return 'G';
+            case 'h': return 'A';
+            case 'j': return 'B';
+            case 'k': return 'C1';
+            case 'l': return 'D1';
+
+            case 'w': return 'C#';
+            case 'e': return 'D#';
+            case 't': return 'F#';
+            case 'y': return 'G#';
+            case 'u': return 'A#';
+            case 'o': return 'C#1';
+            case 'p': return 'D#1';
+        }
+    }
+    document.addEventListener('keyup', (event) => {
+        const key = event.key.toLocaleLowerCase()
+        let note = findKeyNote(key);
+        if (note) {
+            const keyElement = findElementByDataNote(note)
+            keyElement.classList.remove('active');
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        const key = event.key.toLowerCase();
+        let note = findKeyNote(key);
+      
+        if (note) {
+            console.log(`Playing note: ${note}`);
+            playNote( noteFrequencies[note]);
+            const keyElement = findElementByDataNote(note)
+            keyElement.classList.add('active');
+
+            if (isRecording) {
+                recordedNotes.push({ note: note, time: audioContext.currentTime }); 
+            }
+        }
+    });
+      
+    function findElementByDataNote(note) {
+        return document.querySelector(`[data-note="${note}"]`);
+    }
+    
 
     document.addEventListener('mouseup', () => {
         isMouseDown = false;
@@ -475,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getRowPosition(note) {
         const rowHeight = 25;
-        return (noteRows[note] || 0) * rowHeight;
+        return (noteRows[note] || 0) + (noteRows[note] || 0)* rowHeight;
     }
 
     function createRows() {
@@ -601,9 +652,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cursorLine.style.left = `${cursorPosition}px`;
     
         // Check if we've reached the end of the recorded notes
-        if (currentTime > recordedNotes[recordedNotes.length - 1].time - recordedNotes[0].time) {
+        if (currentTime - recordedNotes[0].time > recordedNotes[recordedNotes.length - 1].time) {
             if (isLooping) {
-                // Reset playback to the beginning
                 playbackStartTime = Date.now();
             } else {
                 stopPlayback();
@@ -670,6 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('No notes were recorded.');
             }
         }
+        
         displayArrangement();
     });
 
