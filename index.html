@@ -111,21 +111,30 @@
         </div>
     <div id="action-log"></div>
         
-    <div class="controls">
+    <div class="controls pixel-font">
         <div id="bpm-display">120 BPM</div>
-        <button id="tap-button">Tap Tempo</button>
-        <button id="metronome-button">TICTAC</button>
+        <div class="button-container">
+            <button id="tap-button" class="control-button">
+                <span>Tap Tempo</span>
+            </button>
+            <button id="metronome-button" class="control-button">
+                <span>Metronome</span>
+            </button>
+        </div>
     </div>
-    <div class="record-ui"> 
-        <button id="record-button">Start Recording</button>
+
+    <div class="record-ui">
+        <div class="button-container">
+            <button id="record-button" class="control-button">🔴</button>
+            <button id="playback-button" class="control-button">🔂</button>
+            <button id="loop-button" class="control-button">🔁</button>
+        </div>
         <div id="arrangement-view">
             <div id="cursor-line"></div>
         </div>
-        <button id="playback-button">Play Back</button>
-        <button id="loop-button">Loop</button>
     </div>
-</div>
 
+</div>
 <script src="./script.js"></script>
 
 </body>
