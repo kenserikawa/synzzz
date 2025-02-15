@@ -1,16 +1,24 @@
+function log(message) {
+    const logDiv = document.getElementById('action-log'); 
+    
+    const logEntry = document.createElement('div');
+    logEntry.textContent = logEntry.textContent + "\n" + message;
+    logDiv.appendChild(logEntry);
+    logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     var audioContext;
 
     function initializeAudioContext() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log('AudioContext initialized');
+        //log('AudioContext initialized');
     }
 
     initializeAudioContext();
 
     const keys = document.querySelectorAll('.key');
-    const waveSelector = document.getElementById('wave-type');
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
 
@@ -25,6 +33,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentIndex = 0;
 
+    const eqCanvas = document.getElementById("eqCanvas");
+    const eqContext = eqCanvas.getContext("2d");
+    const eqAnalyser = audioContext.createAnalyser();
+    eqAnalyser.fftSize = 2048; // Adjust for desired detail
+    const eqBufferLength = eqAnalyser.frequencyBinCount;
+    const eqDataArray = new Uint8Array(eqBufferLength);
+
+    let isRecording = false;
+    let recordedNotes = [];  // Array to store the recorded notes
+    const recordButton = document.getElementById('record-button');
+    const arrangementView = document.getElementById('arrangement-view'); // Get the arrangement view element
+    const playbackButton = document.getElementById('playback-button');
+    const loopButton = document.getElementById('loop-button');
+    let isLooping = false; // Flag for looping
+    let loopTimeout;
+    let recordingStopTime; 
+
     const display = document.querySelector('.display');
     const leftButton = document.querySelector('.left');
     const rightButton = document.querySelector('.right');
@@ -35,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         display.innerHTML = `
             <span class="wave-icon">${currentWave.icon}</span>
         `;
+        //log('wave: ' + currentWaveType)
     }
 
     leftButton.addEventListener('click', () => {
@@ -131,6 +157,27 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(drawWaveform);
     }
 
+    function drawEQ() {
+        eqAnalyser.getByteFrequencyData(eqDataArray);
+    
+        eqContext.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+    
+        const barWidth = (eqCanvas.width / eqBufferLength) * 10;
+        let barHeight;
+        let x = 0;
+    
+        for (let i = 0; i < eqBufferLength; i++) {
+            barHeight = eqDataArray[i];
+    
+            eqContext.fillStyle = 'rgb('+ (barHeight + 100) + ',18, 96)';
+            eqContext.fillRect(x, eqCanvas.height - barHeight / 2, barWidth, barHeight / 2);
+    
+            x += barWidth * 2;
+        }
+    
+        requestAnimationFrame(drawEQ);
+    }
+
     function createChorusNode() {
         chorusNode = audioContext.createDelay();
         chorusNode.delayTime.value = 0.03; // 30ms delay
@@ -158,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         delayNode.connect(feedbackNode);
         feedbackNode.connect(delayNode);
+        //log('delay node created')
     
         return delayNode;
     }
@@ -177,6 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         convolverNode.buffer = impulseBuffer;
+        //log('reverb node created')
+        
         return convolverNode;
     }
 
@@ -198,6 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const rampValue = 0.001;
         oscillator.type = currentWaveType;
 
+        //log('Frequency: ' + frequency)
+
         oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
         gainNode.gain.setValueAtTime(1, audioContext.currentTime);
@@ -207,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         oscillator.connect(analyser);
         oscillator.connect(gainNode);
+        oscillator.connect(eqAnalyser)
 
         let currentNode = gainNode;
 
@@ -269,6 +322,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const frequency = noteFrequencies[note];
             playNote(frequency);
             key.classList.add('active');
+
+            if (isRecording) {
+                recordedNotes.push({ note: note, time: audioContext.currentTime }); // Store the note and its start time
+            }
         });
 
         key.addEventListener('mouseup', () => {
@@ -285,6 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const frequency = noteFrequencies[note];
             playNote(frequency);
             key.classList.add('active');
+            if (isRecording) {
+                recordedNotes.push({ note: note, time: audioContext.currentTime }); 
+            }
         });
 
         key.addEventListener('touchend', (e) => {
@@ -348,5 +408,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function displayArrangement() {
+        arrangementView.innerHTML = ''; // Clear previous arrangement
+
+        if (recordedNotes.length === 0) {
+            arrangementView.textContent = 'No notes recorded.';
+            return;
+        }
+
+        const startTime = recordedNotes[0].time; // Get the start time of the first note
+
+        recordedNotes.forEach(noteData => {
+            const noteElement = document.createElement('div');
+            noteElement.textContent = noteData.note;
+            noteElement.classList.add('arrangement-note');
+
+            // Calculate the position of the note based on its time relative to the start time
+            const relativeTime = noteData.time - startTime;
+            noteElement.style.left = (relativeTime * 50) + 'px'; // Adjust the scaling factor (50) as needed
+
+            arrangementView.appendChild(noteElement);
+        });
+    }
+
+    recordButton.addEventListener('click', () => {
+        isRecording = !isRecording;
+        recordButton.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
+
+        if (isRecording) {
+            recordedNotes = []; // Clear previous recording
+            console.log('Recording started...');
+        } else {
+            recordingStopTime = audioContext.currentTime;
+
+            console.log('Recording stopped.');
+            displayArrangement();  // Display the recorded notes
+        }
+    });
+
+    function playNoteWithDelay(noteData, delay) {
+        setTimeout(() => {
+            const frequency = noteFrequencies[noteData.note];
+            playNote(frequency);
+        }, delay * 1000); // Convert delay to milliseconds
+    }
+    
+    // NEW: Playback Function
+    playbackButton.addEventListener('click', () => {
+      playRecordedNotes()
+    });
+
+    function playRecordedNotes() {
+        if (recordedNotes.length === 0) return;
+    
+        const startTime = recordedNotes[0].time;
+    
+        recordedNotes.forEach(noteData => {
+            const relativeTime = noteData.time - startTime;
+            playNoteWithDelay(noteData, relativeTime);
+        });
+    }
+    
+    
+    function startLoop() {
+        playRecordedNotes();  // Play the notes once
+        const startTime = recordedNotes[0].time;
+        const endTime = recordedNotes[recordedNotes.length - 1].time;
+        const loopDuration = (recordingStopTime - startTime) * 1000;  // Duration of the recorded sequence in milliseconds
+        //loopDuration = 1000
+
+        loopTimeout = setTimeout(() => {
+            startLoop();  // Schedule the next loop
+        }, loopDuration);
+        console.log(loopDuration)
+    }
+
+    function stopLoop() {
+        clearTimeout(loopTimeout); // Clear the timeout
+    }
+
+    loopButton.addEventListener('click', () => {
+        isLooping = !isLooping;
+        loopButton.textContent = isLooping ? 'Stop Loop' : 'Start Loop';
+
+        if (isLooping) {
+            if (recordedNotes.length === 0) {
+                alert('Record something before looping.');
+                isLooping = false;
+                loopButton.textContent = 'Start Loop';
+                return;
+            }
+            startLoop();
+        } else {
+            stopLoop();
+        }
+    });
+
     drawWaveform();
+    drawEQ();
 });

@@ -56,14 +56,16 @@
                     <div class="oscillator-wave-viewer">
                         <canvas id="waveformCanvas" width="100" height="50"></canvas>
                     </div>
+                    <div class="oscillator-wave-viewer">
+                        <canvas id="eqCanvas" width="100" height="50"></canvas>
+                    </div>
                 </div>
             </div>
 
   
       
             <div class="piano">
-        <!--         
-                # Lowest notes
+                
                 <div class="key" data-note="C"></div>
                 <div class="key black" data-note="C#"></div>
                 <div class="key" data-note="D"></div>
@@ -76,7 +78,7 @@
                 <div class="key" data-note="A"></div>
                 <div class="key black" data-note="A#"></div>
                 <div class="key" data-note="B"></div> 
-        -->
+       
                 <div class="key white-corner-border" data-note="C1"></div>
                 <div class="key black black-corner-border" data-note="C#1"></div>
                 <div class="key white-corner-border" data-note="D1"></div>
@@ -107,8 +109,16 @@
         -->
             </div>
         </div>
+    <div id="action-log"></div>
+    <div class="record-ui"> 
+        <button id="record-button">Start Recording</button>
+        <div id="arrangement-view"></div>
+        <button id="playback-button">Play Back</button>
+        <button id="loop-button">Loop</button>
     </div>
-    <script src="./script.js"></script>
+</div>
+
+<script src="./script.js"></script>
 
 </body>
 </html>
