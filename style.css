@@ -342,8 +342,49 @@
             box-shadow: 0 0 5px rgb(0, 255, 47);
         }
 
+        #arrangement-view {
+            padding: 10px;
+            margin-top: 10px;
+            display: flex;
+            height: 200px;
+            border: 1px solid #ccc;
+            position: relative;
+            overflow-x: auto;
+            white-space: nowrap; 
+        }
+
+
+        .arrangement-note {
+            display: inline-block;
+            position: absolute;
+            top: 10px;
+            height: 20px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            cursor: grab;
+            padding: 5px;
+            border: 1px solid #2980b9; /* Add a border */
+        }
+
+
+    .arrangement-row {
+        position: absolute;
+        left: 0;
+        width: 100%; /* Cover the full width of the arrangement view */
+        border-bottom: 1px solid #eee; /* Light grey for row separation */
+        box-sizing: border-box; /* Include border in the element's total width and height */
+      }
+
+        .arrangement-note.dragging {
+            cursor: grabbing;
+            opacity: 0.7;
+        }
+
+
+
         @media screen and (orientation: landscape) and (max-width: 768px) {
-            body {
+      /*       body {
                 display: none;
             }
             #landscape-warning {
@@ -356,5 +397,5 @@
                 color: #333; 
                 font-size: 20px; 
                 font-weight: bold; 
-            }
+            } */
         }

@@ -51,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let loopTimeout;
     let recordingStopTime; 
 
+    let draggingNote = null;
+    let dragStartOffsetX = 0;
+    let dragStartOffsetY = 0;
+
     const display = document.querySelector('.display');
     const leftButton = document.querySelector('.left');
     const rightButton = document.querySelector('.right');
@@ -117,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let chorusNode = null;
     let lfo = null;
 
-    const attackTime = 0.12;
-    const decayTime = 2;
-    const sustainLevel = 7;
-    const releaseTime = 2;
+    const attackTime = 1;
+    const decayTime = 1;
+    const sustainLevel = 1;
+    const releaseTime = 1;
 
     const waveformCanvas = document.getElementById("waveformCanvas");
     const waveformContext = waveformCanvas.getContext("2d");
@@ -170,17 +174,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
         eqContext.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
     
-        const barWidth = (eqCanvas.width / eqBufferLength) * 15;
+        const barWidth = (eqCanvas.width / eqBufferLength) * 25;
         let barHeight = 0;
         let x = 0;
-    
+
         for (let i = 0; i < eqBufferLength; i++) {
-            barHeight = eqDataArray[i];
+            // Decay the bar height (reduce it slightly each frame)
+            barHeight = Math.max(0, eqDataArray[i] - 10); // Adjust the decay amount (10) as needed                                                                                                             
     
             eqContext.fillStyle = 'rgb('+ (barHeight + 100) + ',50, 196)';
-            eqContext.fillRect(x, eqCanvas.height - barHeight / 2, barWidth, barHeight / 2);
+            eqContext.fillRect(x, eqCanvas.height - barHeight / 6, barWidth, barHeight / 2);
     
-            x += barWidth * 0.5;
+            x += barWidth +1;
         }
     
         requestAnimationFrame(drawEQ);
@@ -416,29 +421,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function displayArrangement() {
-        arrangementView.innerHTML = ''; // Clear previous arrangement
+    function getRowPosition(note) {
+        const noteRows = {  // Define rows for your notes
+            'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
+            'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
+            'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 //Up to F2 to avoid overlap
+        };
 
-        if (recordedNotes.length === 0) {
+        const rowHeight = 25; // Adjust row height as needed
+        return (noteRows[note] || 0) * rowHeight; // Default to the first row if note is not found
+    }
+
+    function displayArrangement() {
+        arrangementView.innerHTML = ''; 
+    
+        if (recordedNotes.length === 0 && !isRecording) {
             arrangementView.textContent = 'No notes recorded.';
             return;
         }
-
-        const startTime = recordedNotes[0].time; // Get the start time of the first note
-
+    
+        const startTime = recordedNotes[0].time; 
+    
         recordedNotes.forEach(noteData => {
             const noteElement = document.createElement('div');
-            noteElement.textContent = noteData.note;
+
+            const noteText = `${noteData.note} (${(noteData.time - startTime).toFixed(2)}s)`;
+
+            noteElement.textContent = noteText;
             noteElement.classList.add('arrangement-note');
 
-            // Calculate the position of the note based on its time relative to the start time
             const relativeTime = noteData.time - startTime;
-            noteElement.style.left = (relativeTime * 50) + 'px'; // Adjust the scaling factor (50) as needed
+            noteElement.style.left = (relativeTime * 50) + 'px';
+
+            noteElement.draggable = true;
+            noteElement.style.top = getRowPosition(noteData.note) + 'px'; 
 
             arrangementView.appendChild(noteElement);
         });
+
+        // Attach drag events to the arrangement view *after* notes are added
+        attachDragEvents();
     }
 
+    // Function to attach drag events to arrangement notes
+    function attachDragEvents() {
+        const notes = document.querySelectorAll('.arrangement-note');
+
+        notes.forEach(note => {
+            note.addEventListener('mousedown', (e) => {
+                draggingNote = note;
+                dragStartOffsetX = e.clientX - note.offsetLeft;
+                note.classList.add('dragging');
+            });
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (draggingNote) {
+            const newLeft = e.clientX - dragStartOffsetX;
+            const initialTop = getRowPosition(draggingNote.dataset.note);
+            draggingNote.style.left = newLeft + 'px';
+            draggingNote.style.top = initialTop + 'px';  // Keep on the original row
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (draggingNote) {
+            draggingNote.classList.remove('dragging');
+            draggingNote = null;
+        }
+    });
+    
     recordButton.addEventListener('click', () => {
         isRecording = !isRecording;
         recordButton.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
@@ -448,11 +501,28 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Recording started...');
         } else {
             recordingStopTime = audioContext.currentTime;
-
             console.log('Recording stopped.');
-            displayArrangement();  // Display the recorded notes
+            createRows()
         }
+        displayArrangement();  // Display the recorded notes
+
     });
+
+    function createRows() {
+        const noteRows = {  // Define rows for your notes
+            'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
+            'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
+            'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 //Up to F2 to avoid overlap
+        };
+           const rowHeight = 25; // Adjust row height as needed
+         for (const note in noteRows) {
+                const row = document.createElement('div');
+                row.classList.add('arrangement-row');
+                row.style.top = getRowPosition(note) + 'px';
+                row.style.height = rowHeight + 'px';
+                arrangementView.appendChild(row);
+        }
+     }
 
     function playNoteWithDelay(noteData, delay) {
         setTimeout(() => {
