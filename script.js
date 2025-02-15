@@ -170,17 +170,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
         eqContext.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
     
-        const barWidth = (eqCanvas.width / eqBufferLength) * 10;
-        let barHeight;
+        const barWidth = (eqCanvas.width / eqBufferLength) * 15;
+        let barHeight = 0;
         let x = 0;
     
         for (let i = 0; i < eqBufferLength; i++) {
             barHeight = eqDataArray[i];
     
-            eqContext.fillStyle = 'rgb('+ (barHeight + 100) + ',18, 96)';
+            eqContext.fillStyle = 'rgb('+ (barHeight + 100) + ',50, 196)';
             eqContext.fillRect(x, eqCanvas.height - barHeight / 2, barWidth, barHeight / 2);
     
-            x += barWidth * 2;
+            x += barWidth * 0.5;
         }
     
         requestAnimationFrame(drawEQ);

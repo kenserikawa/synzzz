@@ -166,11 +166,13 @@
             position: absolute; /* Position it relative to the .oscillator-wave-viewer */
             bottom: 0;          /* Align to the bottom */
             right: 0;           /* Align to the right */
-            background-color: rgba(0, 0, 0, 0.5);  /* Optional: Add a background for readability */
+            background-color: rgba(0, 0, 0, 0.3);  /* Optional: Add a background for readability */
             color: white;        /* Optional: Set text color */
             padding: 2px 4px;    /* Optional: Add some padding */
             font-size: 0.7em;    /* Optional: Adjust font size */
-            font-family: sans-serif;
+            border-top-left-radius: 30%;
+
+            border-bottom-right-radius: 100%;
         }
 
         .oscillator-wave-viewer {
