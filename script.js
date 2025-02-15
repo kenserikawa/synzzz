@@ -18,10 +18,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeAudioContext();
 
+    const noteRows = { 
+        'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
+        'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
+        'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 
+    };
+
+    const bpmDisplay = document.getElementById('bpm-display');
+    const tapButton = document.getElementById('tap-button');
+    const metronomeButton = document.getElementById('metronome-button');
+    
+    let taps = [];
+    let lastTapTime = 0;
+    let isMetronomeOn = false;
+    let metronomeInterval;
+    let beatsPerMinute = 120;
+    const secondsPerBeat = 60 / beatsPerMinute;
+    const pixelsPerSecond = 50; 
+
+
+    const clickSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=');
+
+    function calculateBPM() {
+        const now = Date.now();
+        if (now - lastTapTime > 2000) {
+            taps = [];
+        }
+        taps.push(now);
+        lastTapTime = now;
+
+        if (taps.length > 4) {
+            taps = taps.slice(-4);
+        }
+
+       if (taps.length > 1) {
+            const intervals = [];
+            for (let i = 1; i < taps.length; i++) {
+                intervals.push(taps[i] - taps[i-1]);
+            }
+            const averageInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+            beatsPerMinute = Math.round(60000 / averageInterval);
+            updateBPMDisplay();
+        }
+    }
+
+    tapButton.addEventListener('click', calculateBPM);
+    document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space') {
+            calculateBPM();
+        }
+    });
+
     const keys = document.querySelectorAll('.key');
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
     const chorusFader = document.getElementById('chorus-fader');
+
 
     let currentWaveType = 'sine';
 
@@ -422,59 +474,158 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function getRowPosition(note) {
-        const noteRows = {  // Define rows for your notes
-            'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
-            'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
-            'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 //Up to F2 to avoid overlap
-        };
+        const rowHeight = 25;
+        return (noteRows[note] || 0) * rowHeight;
+    }
 
-        const rowHeight = 25; // Adjust row height as needed
-        return (noteRows[note] || 0) * rowHeight; // Default to the first row if note is not found
+    function createRows() {
+        const rowHeight = 25; 
+        for (const note in noteRows) {
+            const row = document.createElement('div');
+            row.classList.add('arrangement-row');
+            row.setAttribute( 'id', note );
+            row.style.top = getRowPosition(note) + 'px';
+            row.style.height = rowHeight + 'px';
+            arrangementView.appendChild(row);
+        }
+     }
+
+    function displayNotesInArrangement(recordedNotes, startTime) {
+        recordedNotes.forEach((noteData, index) => {
+            const noteParentElement = document.getElementById(noteData.note);
+            const noteElement = document.createElement('div');
+            noteElement.classList.add('arrangement-note');
+            noteElement.draggable = true;
+            noteElement.dataset.index = index;
+    
+            updateNoteElement(noteElement, noteData, startTime);
+    
+            noteParentElement.appendChild(noteElement);
+        });
+    }
+    
+    function addFollowTrackCursor() {
+        const cursor = document.createElement('div');
+        cursor.setAttribute('id', 'cursor-line');
+
+        arrangementView.append(cursor)
     }
 
     function displayArrangement() {
-        arrangementView.innerHTML = ''; 
+        arrangementView.innerHTML = '';
     
         if (recordedNotes.length === 0 && !isRecording) {
             arrangementView.textContent = 'No notes recorded.';
             return;
         }
     
-        const startTime = recordedNotes[0].time; 
-    
-        recordedNotes.forEach(noteData => {
-            const noteElement = document.createElement('div');
-
-            const noteText = `${noteData.note} (${(noteData.time - startTime).toFixed(2)}s)`;
-
-            noteElement.textContent = noteText;
-            noteElement.classList.add('arrangement-note');
-
-            const relativeTime = noteData.time - startTime;
-            noteElement.style.left = (relativeTime * 50) + 'px';
-
-            noteElement.draggable = true;
-            noteElement.style.top = getRowPosition(noteData.note) + 'px'; 
-
-            arrangementView.appendChild(noteElement);
-        });
-
-        // Attach drag events to the arrangement view *after* notes are added
+        const startTime = recordedNotes[0].time;
+        
+        createRows();
+        displayNotesInArrangement(recordedNotes, startTime)
         attachDragEvents();
+        addFollowTrackCursor();
     }
-
-    // Function to attach drag events to arrangement notes
+    
+    function updateNoteElement(noteElement, noteData, startTime) {
+        const relativeTime = noteData.time - startTime;
+        noteElement.textContent = `${noteData.note} (${relativeTime.toFixed(2)}s)`;
+        noteElement.style.left = (relativeTime * 50) + 'px';
+        noteElement.style.top = getRowPosition(noteData.note) + 'px';
+    }
+    
     function attachDragEvents() {
         const notes = document.querySelectorAll('.arrangement-note');
-
+        let draggingNote = null;
+        let dragStartOffsetX = 0;
+        let originalTop = 0;
+    
         notes.forEach(note => {
             note.addEventListener('mousedown', (e) => {
                 draggingNote = note;
                 dragStartOffsetX = e.clientX - note.offsetLeft;
+                originalTop = note.offsetTop;
                 note.classList.add('dragging');
             });
         });
+    
+        document.addEventListener('mousemove', (e) => {
+            if (draggingNote) {
+                const newLeft = e.clientX - dragStartOffsetX;
+                if (newLeft > 0) {
+                    draggingNote.style.left = `${newLeft}px`;
+
+                    draggingNote.style.top = `${originalTop}px`;
+                }                
+            }
+        });
+    
+        document.addEventListener('mouseup', () => {
+            if (draggingNote) {
+                const index = parseInt(draggingNote.dataset.index);
+                const startTime = recordedNotes[0].time;
+                const newTime = startTime + (draggingNote.offsetLeft / 50);
+                
+                recordedNotes[index].time = newTime;
+                
+                updateNoteElement(draggingNote, recordedNotes[index], startTime);
+                
+                draggingNote.classList.remove('dragging');
+                draggingNote = null;
+            }
+        });
     }
+    
+    let isPlaying = false;
+    let playbackStartTime;
+    let animationFrameId;
+    
+    function startPlayback() {
+        isPlaying = true;
+        playbackStartTime = Date.now();
+        moveCursor();
+    }
+    
+    function stopPlayback() {
+        isPlaying = false;
+        cancelAnimationFrame(animationFrameId);
+    }
+    
+    function moveCursor() {
+        if (!isPlaying) return;
+    
+        const currentTime = (Date.now() - playbackStartTime) / 1000; // Convert to seconds
+        const cursorPosition = currentTime * pixelsPerSecond;
+    
+        const cursorLine = document.getElementById('cursor-line');
+        cursorLine.style.left = `${cursorPosition}px`;
+    
+        // Check if we've reached the end of the recorded notes
+        if (currentTime > recordedNotes[recordedNotes.length - 1].time - recordedNotes[0].time) {
+            if (isLooping) {
+                // Reset playback to the beginning
+                playbackStartTime = Date.now();
+            } else {
+                stopPlayback();
+                return;
+            }
+        }
+    
+        animationFrameId = requestAnimationFrame(moveCursor);
+    }
+    
+    // Update the playback button click handler
+    document.getElementById('playback-button').addEventListener('click', () => {
+        if (isPlaying) {
+            stopPlayback();
+            playbackButton.textContent = 'Play Back';
+        } else {
+            startPlayback();
+            playbackButton.textContent = 'Stop';
+        }
+    });
+    
+    
 
     document.addEventListener('mousemove', (e) => {
         if (draggingNote) {
@@ -494,35 +645,33 @@ document.addEventListener('DOMContentLoaded', () => {
     
     recordButton.addEventListener('click', () => {
         isRecording = !isRecording;
-        recordButton.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
-
+        
         if (isRecording) {
             recordedNotes = []; // Clear previous recording
             console.log('Recording started...');
+            recordButton.textContent = 'Stop Recording';
+            playbackButton.disabled = true;
+            loopButton.disabled = true;
         } else {
             recordingStopTime = audioContext.currentTime;
             console.log('Recording stopped.');
-            createRows()
+            recordButton.textContent = 'Start Recording';
+            playbackButton.disabled = false;
+            loopButton.disabled = false;
+            
+            // Focus on playback button
+            playbackButton.focus();
+            
+            // Enable playback and loop buttons only if notes were recorded
+            if (recordedNotes.length > 0) {
+                playbackButton.disabled = false;
+                loopButton.disabled = false;
+            } else {
+                console.log('No notes were recorded.');
+            }
         }
-        displayArrangement();  // Display the recorded notes
-
+        displayArrangement();
     });
-
-    function createRows() {
-        const noteRows = {  // Define rows for your notes
-            'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
-            'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
-            'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 //Up to F2 to avoid overlap
-        };
-           const rowHeight = 25; // Adjust row height as needed
-         for (const note in noteRows) {
-                const row = document.createElement('div');
-                row.classList.add('arrangement-row');
-                row.style.top = getRowPosition(note) + 'px';
-                row.style.height = rowHeight + 'px';
-                arrangementView.appendChild(row);
-        }
-     }
 
     function playNoteWithDelay(noteData, delay) {
         setTimeout(() => {
@@ -556,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         //loopDuration = 1000
 
         loopTimeout = setTimeout(() => {
+            startPlayback()
             startLoop();  // Schedule the next loop
         }, loopDuration);
         console.log(loopDuration)
@@ -563,6 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function stopLoop() {
         clearTimeout(loopTimeout); // Clear the timeout
+        stopPlayback() // Clear the timeout
     }
 
     loopButton.addEventListener('click', () => {

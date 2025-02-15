@@ -44,7 +44,9 @@
             border-top-right-radius: 10px;
             border-top-left-radius: 10px;
             border-top: 3px solid rgba(143, 143, 143, 0.203);
-            border-radius: 2px;
+            border-top-right-radius: 10px;
+            border-top-left-radius: 10px;
+            background: linear-gradient(45deg, #333, rgba(40, 40, 40, 0.972));
         }
 
         .wave-selector {
@@ -192,7 +194,6 @@
 
         .piano {
             display: flex;
-            background-color: #333;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 20px  rgba(0,0,0,0.9);
@@ -212,6 +213,13 @@
             border-bottom-right-radius: inherit;
             border-bottom: 12px solid  rgb(172, 172, 172, 0.3);
             border-bottom-left-radius: inherit;
+        }
+
+        .key:first-child {
+            border-top-left-radius: 10px;
+        }
+        .key:last-child {
+            border-top-right-radius: 10px;
         }
 
         .key.black {
@@ -341,47 +349,88 @@
             background-color: rgb(0, 255, 34);
             box-shadow: 0 0 5px rgb(0, 255, 47);
         }
-
         #arrangement-view {
-            padding: 10px;
-            margin-top: 10px;
-            display: flex;
-            height: 200px;
-            border: 1px solid #ccc;
             position: relative;
-            overflow-x: auto;
-            white-space: nowrap; 
+            width: 100%;
+            height: 400px; /* Adjust as needed */
+            overflow: auto;
+            border: 1px solid #ccc;
         }
-
-
-        .arrangement-note {
-            display: inline-block;
+        
+        .grid-container {
+            position: relative;
+            min-height: 100%;
+            min-width: 100%;
+        }
+        
+        .arrangement-row {
             position: absolute;
-            top: 10px;
-            height: 20px;
-            background-color: #3498db;
-            color: white;
-            text-align: center;
-            cursor: grab;
-            padding: 5px;
-            border: 1px solid #2980b9; /* Add a border */
+            left: 0;
+            right: 0;
+            height: 25px; /* Match your rowHeight */
+            border-bottom: 1px dashed rgba(64, 64, 64, 0.191);
         }
-
-
-    .arrangement-row {
-        position: absolute;
-        left: 0;
-        width: 100%; /* Cover the full width of the arrangement view */
-        border-bottom: 1px solid #eee; /* Light grey for row separation */
-        box-sizing: border-box; /* Include border in the element's total width and height */
-      }
-
+        
+        #cursor-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: red;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .note-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0e0e0;
+            border-right: 1px solid #ccc;
+            z-index: 2;
+        }
+        
+        .grid-line {
+            position: absolute;
+            background-color: #ddd;
+        }
+        
+        .grid-line.vertical {
+            top: 0;
+            bottom: 0;
+            width: 1px;
+        }
+        
+        .grid-line.horizontal {
+            left: 30px; /* Align with the end of note labels */
+            right: 0;
+            height: 1px;
+        }
+        
+        .arrangement-note {
+            position: absolute;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: move;
+            z-index: 10;
+            top: 2px; /* Center vertically in the row */
+            height: 21px; /* Slightly smaller than row height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .arrangement-note.dragging {
-            cursor: grabbing;
             opacity: 0.7;
         }
-
-
 
         @media screen and (orientation: landscape) and (max-width: 768px) {
       /*       body {
