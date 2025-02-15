@@ -566,6 +566,18 @@
             opacity: 0.7;
         }
 
+        @media screen and (max-width: 768px) {
+            .main-container {
+                padding-top: 400px;
+            }
+            .record-ui {
+                padding-right:170px;
+            }
+            .record-ui,
+            .piano-container {
+                transform: rotate(-90deg); 
+            }
+        }
         @media screen and (orientation: landscape) and (max-width: 768px) {
       /*       body {
                 display: none;
@@ -581,4 +593,5 @@
                 font-size: 20px; 
                 font-weight: bold; 
             } */
+
         }
