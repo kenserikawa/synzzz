@@ -11,6 +11,7 @@
 
 
         :root {
+            --wave-main-color: rgb(252, 50, 196 );
             --sb-track-color: #232e3300;
          /*    --sb-thumb-color: #6baf8da8; */
          --sb-thumb-color: rgba(157, 51, 187, 0.796);
@@ -101,7 +102,7 @@
         .wave-icon {
             display: block;
             font-size: 24px;
-            color: rgb(255, 0, 0);
+            color:var(--wave-main-color);
         }
         
         .wave-name {
@@ -381,12 +382,11 @@
         
         .button-container {
             display: flex;
-            justify-content: space-around;
             margin-bottom: 20px;
         }
         
         .control-button {
-            font-size: xx-large;
+            font-size: large;
             border: none;
             display: flex;
             flex-direction: column;

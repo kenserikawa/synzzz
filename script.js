@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyser.getByteTimeDomainData(dataArray);
 
         waveformContext.lineWidth = 2;
-        waveformContext.strokeStyle = "rgb(252, 18, 96, 0.8)";
+        waveformContext.strokeStyle = "rgb(252, 50, 196 )";
 
         waveformContext.beginPath();
 
