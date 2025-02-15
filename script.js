@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const keys = document.querySelectorAll('.key');
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
+    const chorusFader = document.getElementById('chorus-fader');
 
     let currentWaveType = 'sine';
 
@@ -84,6 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
         currentReverbTime = event.target.value;
         createReverbNode();
     });
+
+    let currentChorusTime = 1;        
+    chorusFader.addEventListener('input', (event) => {
+        currentChorusTime = event.target.value;
+        createChorusNode();
+    });
+
 
     const noteFrequencies = {
         // Low octave
@@ -180,14 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createChorusNode() {
         chorusNode = audioContext.createDelay();
-        chorusNode.delayTime.value = 0.03; // 30ms delay
+        chorusNode.delayTime.value = currentChorusTime; // 30ms delay
     
         lfo = audioContext.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 1;
+        lfo.type = 'square';
+        lfo.frequency.value = 0.2;
     
         const lfoGain = audioContext.createGain();
-        lfoGain.gain.value = 0.32;
+        lfoGain.gain.value = 10;
     
         lfo.connect(lfoGain);
         lfoGain.connect(chorusNode.delayTime);
