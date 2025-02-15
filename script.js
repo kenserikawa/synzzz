@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const secondsPerBeat = 60 / beatsPerMinute;
     const pixelsPerSecond = 50; 
 
-
-    const clickSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=');
-
     function calculateBPM() {
         const now = Date.now();
         if (now - lastTapTime > 2000) {
@@ -75,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
     const chorusFader = document.getElementById('chorus-fader');
-
 
     let currentWaveType = 'sine';
 
