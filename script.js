@@ -61,6 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+    function updateBPMDisplay() {
+        bpmDisplay.textContent = `${beatsPerMinute} BPM`;
+    }
+    
     tapButton.addEventListener('click', calculateBPM);
     document.addEventListener('keydown', (event) => {
         if (event.code === 'Space') {
@@ -162,6 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'G#2': 830.61, 'A2': 880.00, 'A#2': 932.33, 'B2': 987.77
     };
     
+    const rowHeight = 20;
+
     const delayToggle = document.getElementById('delay-toggle');
     const reverbToggle = document.getElementById('reverb-toggle');
     const chorusToggle = document.getElementById('chorus-toggle');
@@ -521,12 +528,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function getRowPosition(note) {
-        const rowHeight = 25;
         return (noteRows[note] || 0) + (noteRows[note] || 0)* rowHeight;
     }
 
     function createRows() {
-        const rowHeight = 25; 
         for (const note in noteRows) {
             const row = document.createElement('div');
             row.classList.add('arrangement-row');
