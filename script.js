@@ -4,7 +4,7 @@ function log(message) {
     const logEntry = document.createElement('div');
     logEntry.textContent = logEntry.textContent + "\n" + message;
     logDiv.appendChild(logEntry);
-    logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom
+    logDiv.scrollTop = logDiv.scrollHeight;
 }
 
 
@@ -92,17 +92,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const eqCanvas = document.getElementById("eqCanvas");
     const eqContext = eqCanvas.getContext("2d");
     const eqAnalyser = audioContext.createAnalyser();
-    eqAnalyser.fftSize = 2048; // Adjust for desired detail
+    eqAnalyser.fftSize = 2048;
     const eqBufferLength = eqAnalyser.frequencyBinCount;
     const eqDataArray = new Uint8Array(eqBufferLength);
 
     let isRecording = false;
-    let recordedNotes = [];  // Array to store the recorded notes
+    let recordedNotes = [];
     const recordButton = document.getElementById('record-button');
-    const arrangementView = document.getElementById('arrangement-view'); // Get the arrangement view element
+    const arrangementView = document.getElementById('arrangement-view');
     const playbackButton = document.getElementById('playback-button');
     const loopButton = document.getElementById('loop-button');
-    let isLooping = false; // Flag for looping
+    let isLooping = false;
     let loopTimeout;
     let recordingStopTime; 
 
@@ -120,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
         display.innerHTML = `
             <span class="wave-icon">${currentWave.icon}</span>
         `;
-        //log('wave: ' + currentWaveType)
     }
 
     leftButton.addEventListener('click', () => {
@@ -194,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMouseDown = false;
     let triggeredKeys = new Set();
     
-    // OSCILLATOR VIEWER ...
     function drawWaveform() {
         waveformContext.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
         analyser.getByteTimeDomainData(dataArray);
@@ -646,13 +644,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function moveCursor() {
         if (!isPlaying) return;
     
-        const currentTime = (Date.now() - playbackStartTime) / 1000; // Convert to seconds
+        const currentTime = (Date.now() - playbackStartTime) / 1000;
         const cursorPosition = currentTime * pixelsPerSecond;
     
         const cursorLine = document.getElementById('cursor-line');
         cursorLine.style.left = `${cursorPosition}px`;
     
-        // Check if we've reached the end of the recorded notes
         if (currentTime - recordedNotes[0].time > recordedNotes[recordedNotes.length - 1].time) {
             if (isLooping) {
                 playbackStartTime = Date.now();
@@ -665,7 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(moveCursor);
     }
     
-    // Update the playback button click handler
     document.getElementById('playback-button').addEventListener('click', () => {
         if (isPlaying) {
             stopPlayback();
@@ -683,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newLeft = e.clientX - dragStartOffsetX;
             const initialTop = getRowPosition(draggingNote.dataset.note);
             draggingNote.style.left = newLeft + 'px';
-            draggingNote.style.top = initialTop + 'px';  // Keep on the original row
+            draggingNote.style.top = initialTop + 'px'; 
         }
     });
 
@@ -698,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isRecording = !isRecording;
         
         if (isRecording) {
-            recordedNotes = []; // Clear previous recording
+            recordedNotes = []; 
             console.log('Recording started...');
             recordButton.textContent = 'Stop Recording';
             playbackButton.disabled = true;
@@ -710,10 +706,8 @@ document.addEventListener('DOMContentLoaded', () => {
             playbackButton.disabled = false;
             loopButton.disabled = false;
             
-            // Focus on playback button
             playbackButton.focus();
             
-            // Enable playback and loop buttons only if notes were recorded
             if (recordedNotes.length > 0) {
                 playbackButton.disabled = false;
                 loopButton.disabled = false;
@@ -729,10 +723,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const frequency = noteFrequencies[noteData.note];
             playNote(frequency);
-        }, delay * 1000); // Convert delay to milliseconds
+        }, delay * 1000);
     }
     
-    // NEW: Playback Function
     playbackButton.addEventListener('click', () => {
       playRecordedNotes()
     });
@@ -750,22 +743,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
     function startLoop() {
-        playRecordedNotes();  // Play the notes once
+        playRecordedNotes();
         const startTime = recordedNotes[0].time;
         const endTime = recordedNotes[recordedNotes.length - 1].time;
-        const loopDuration = (recordingStopTime - startTime) * 1000;  // Duration of the recorded sequence in milliseconds
-        //loopDuration = 1000
+        const loopDuration = (recordingStopTime - startTime) * 1000;
 
         loopTimeout = setTimeout(() => {
             startPlayback()
-            startLoop();  // Schedule the next loop
+            startLoop();
         }, loopDuration);
         console.log(loopDuration)
     }
 
     function stopLoop() {
-        clearTimeout(loopTimeout); // Clear the timeout
-        stopPlayback() // Clear the timeout
+        clearTimeout(loopTimeout);
+        stopPlayback();
     }
 
     loopButton.addEventListener('click', () => {
