@@ -687,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get DOM Elements
     const waveformCanvas = document.getElementById("waveformCanvas");
     const eqCanvas = document.getElementById("eqCanvas");
+    const keys = document.querySelectorAll('.key');
     const delayFader = document.getElementById('delay-fader');
     const reverbFader = document.getElementById('reverb-fader');
     const chorusFader = document.getElementById('chorus-fader');
@@ -700,8 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bpmDisplay = document.getElementById('bpm-display');
     const tapButton = document.getElementById('tap-button');
     const metronomeButton = document.getElementById('metronome-button');
-    const waveSelector = document.getElementById('wave-type');
-
+    let currentWaveType = 'sine';
     const waveforms = [
         { icon: '∿', name: 'Sine', value: 'sine' },
         { icon: '▇', name: 'Square', value: 'square' },
@@ -758,14 +758,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Instantiate the Metronome
     const metronome = new Metronome(audioContext, bpmDisplay, tapButton, metronomeButton);
 
-    // Wave Type selector
-    waveSelector.addEventListener('change', () => {
-        const selectedWaveType = waveSelector.value;
-        synth.setWaveType(selectedWaveType);
-        visualizer.connectSource(synth.analyser)
-        visualizer.connectSource(synth.eqAnalyser)
-
-    });
 
     // Effect Faders
     delayFader.addEventListener('input', (event) => {
@@ -795,6 +787,8 @@ document.addEventListener('DOMContentLoaded', () => {
         display.innerHTML = `
             <span class="wave-icon">${currentWave.icon}</span>
         `;
+        currentWaveType = currentWave.value;
+
     }
     
     leftButton.addEventListener('click', () => {
