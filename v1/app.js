@@ -14,10 +14,10 @@ class Synth {
         this.currentDelayTime = 0.3;
         this.currentReverbTime = 1;
 
-        this.attackTime = 0.12;
-        this.decayTime = 2;
-        this.sustainLevel = 7;
-        this.releaseTime = 2;
+        this.attackTime = 0;
+        this.decayTime = 1;
+        this.sustainLevel = 1;
+        this.releaseTime = 1;
 
         this.eqAnalyser.fftSize = 256;
 
@@ -25,11 +25,6 @@ class Synth {
             source.connect(this.analyser);
             source.connect(this.eqAnalyser);
         }
-
-        // Initial Effect Nodes
-        //this.createDelayNode();
-        //this.createReverbNode();
-        //this.createChorusNode();
     }
 
     playNote(frequency) {
@@ -97,6 +92,12 @@ class Synth {
         this.createReverbNode(); // Recreate the reverb node with the new time
     }
 
+    setChorusTime(time)
+    {
+        this.currentChorusTime = time;
+        this.createChorusNode();
+    }
+
     enableDelay(enabled) {
         if (enabled && !this.delayNode) {
             this.createDelayNode();
@@ -131,7 +132,7 @@ class Synth {
 
     createChorusNode() {
         this.chorusNode = this.audioContext.createDelay();
-        this.chorusNode.delayTime.value = 0.03; // 30ms delay
+        this.chorusNode.delayTime.value = this.currentChorusTime; 
 
         this.lfo = this.audioContext.createOscillator();
         this.lfo.type = 'sine';
@@ -178,18 +179,40 @@ class Synth {
         return this.reverbNode;
     }
 }
+
 class Keyboard {
-    constructor(synth, noteFrequencies) {
+    constructor(synth, noteFrequencies, keys) {
         this.synth = synth;
-        this.noteFrequencies = noteFrequencies; // Frequencies must be passed down
-        this.keys = document.querySelectorAll('.key'); // Select keys in the constructor
+        this.noteFrequencies = noteFrequencies; 
+        this.keys = keys; 
         this.isMouseDown = false;
         this.triggeredKeys = new Set(); // Track pressed keys
 
-        this.attachEventListeners(); // Call the event listener setup
-
+        this.attachEventListeners(); 
     }
 
+    findKeyNote(key) {
+        switch (key) {
+            case 'a': return 'C';
+            case 's': return 'D';
+            case 'd': return 'E';
+            case 'f': return 'F';
+            case 'g': return 'G';
+            case 'h': return 'A';
+            case 'j': return 'B';
+            case 'k': return 'C1';
+            case 'l': return 'D1';
+
+            case 'w': return 'C#';
+            case 'e': return 'D#';
+            case 't': return 'F#';
+            case 'y': return 'G#';
+            case 'u': return 'A#';
+            case 'o': return 'C#1';
+            case 'p': return 'D#1';
+        }
+    }
+  
     attachEventListeners() {
         this.keys.forEach(key => {
             const note = key.getAttribute('data-note');
@@ -249,6 +272,7 @@ class Keyboard {
             this.isMouseDown = true;
         });
     }
+
     handleKeyDown(event) {
         // Implementation depends on how you want to handle key down events
         // (e.g., trigger playNote based on key code)
@@ -280,8 +304,8 @@ class Arrangement {
         this.loopTimeout = null;
         this.recordingStopTime = null;
         this.startTime = null;
-        this.playbackTimeoutIds = [];  //Store timeout IDs so we can clear them when stopping playback
-
+        this.arrangementView = null;
+        this.playbackTimeoutIds = [];  
     }
 
     startRecording() {
@@ -313,23 +337,32 @@ class Arrangement {
         if (this.recordedNotes.length === 0) return;
         this.stop(); 
         this.startTime = this.audioContext.currentTime;
-        this.playbackTimeoutIds = []; 
+        this.recordedNotes.sort((a, b) => a.time - b.time);
 
         this.recordedNotes.forEach(noteData => {
-             const relativeTime = noteData.time - this.startTime;
+            const noteTime = noteData.time - this.startTime;
+            const playbackTime = this.startTime + noteTime; 
 
-             const timeoutId = setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 const frequency = this.noteFrequencies[noteData.note];
-                playNoteFunction(frequency); 
-            }, relativeTime * 1000);
-            this.playbackTimeoutIds.push(timeoutId);
+                playNoteFunction(frequency);
+            }, playbackTime * 1000);
+
+            this.playbackTimeoutIds.push(timeoutId); 
         });
+
+        if (this.arrangementView) {
+            this.arrangementView.startPlayback();
+        }
     }
 
     stop() {
-        // Clear all scheduled notes
         this.playbackTimeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
-        this.playbackTimeoutIds = []; //Clear timeout array
+        this.playbackTimeoutIds = [];
+
+        if (this.arrangementView) {
+            this.arrangementView.stopPlayback();
+        }
     }
 
     setLooping(looping, playNoteFunction) {
@@ -342,21 +375,26 @@ class Arrangement {
     }
 
     startLoop(playNoteFunction) {
-        if (this.recordedNotes.length === 0) return;
+        if (this.recordedNotes.length === 0) return; 
 
+        const loopDuration = this.recordingStopTime - this.startTime;
+    
         const loop = () => {
-            this.play(playNoteFunction);  // Play the notes
-
-            this.loopTimeout = setTimeout(() => { // Setup to loop again
-                if (this.isLooping) { // check if loop is still enabled
-                    loop();
+            if (!this.isLooping) return; 
+            this.play(playNoteFunction); 
+    
+            this.loopTimeout = setTimeout(() => {
+                if (this.isLooping) {
+                    loop(); 
                 }
-            }, (this.recordingStopTime - this.startTime) * 1000);
+            }, loopDuration * 1000);
         };
-        loop();  // Initial call
+    
+        loop();
     }
 
     stopLoop() {
+        this.isLooping = false;
         clearTimeout(this.loopTimeout);
         this.stop();  // Stop existing playback as well
     }
@@ -376,43 +414,90 @@ class ArrangementView {
         this.arrangementViewElement = arrangementViewElement;
         this.draggingNote = null;
         this.dragStartOffsetX = 0;
-        this.dragStartOffsetY = 0; // Store the initial Y offset for row restriction
+        this.dragStartOffsetY = 0;
+        this.cursor = null; // Cursor element
+        this.pixelsPerSecond = 50; // Pixels per second for cursor movement
+        this.isPlaying = false; // Track playback state
+        this.playbackStartTime = null; // Track playback start time
+        this.animationFrameId = null; // Track animation frame ID
+
+        this.addFollowTrackCursor(); // Add the cursor
     }
 
+    // Add the cursor to the arrangement view
+    addFollowTrackCursor() {
+        this.cursor = document.createElement('div');
+        this.cursor.setAttribute('id', 'cursor-line');
+        this.arrangementViewElement.appendChild(this.cursor);
+    }
+
+    // Move the cursor during playback
+    moveCursor() {
+        if (!this.isPlaying) return;
+
+        const currentTime = (Date.now() - this.playbackStartTime) / 1000; // Current playback time in seconds
+        const cursorPosition = currentTime * this.pixelsPerSecond; // Calculate cursor position
+
+        this.cursor.style.left = `${cursorPosition}px`; // Update cursor position
+
+        // Check if playback has reached the end
+        const recordedNotes = this.arrangement.getNotes();
+        if (recordedNotes.length > 0 && currentTime > recordedNotes[recordedNotes.length - 1].time) {
+            if (this.arrangement.isLooping) {
+                this.playbackStartTime = Date.now(); // Restart playback for looping
+            } else {
+                this.stopPlayback(); // Stop playback if not looping
+                return;
+            }
+        }
+
+        // Request the next animation frame
+        this.animationFrameId = requestAnimationFrame(() => this.moveCursor());
+    }
+
+    // Start playback and cursor movement
+    startPlayback() {
+        this.isPlaying = true;
+        this.playbackStartTime = Date.now(); // Record the start time of playback
+        this.moveCursor(); // Start moving the cursor
+    }
+
+    // Stop playback and cursor movement
+    stopPlayback() {
+        this.isPlaying = false;
+        cancelAnimationFrame(this.animationFrameId); // Stop the cursor animation
+        this.cursor.style.left = '0px'; // Reset cursor position
+    }
+
+    // Render the arrangement view
     render() {
         this.arrangementViewElement.innerHTML = ''; // Clear previous arrangement
-        const recordedNotes = this.arrangement.getNotes(); // get the notes array
+        const recordedNotes = this.arrangement.getNotes(); // Get the notes array
         if (recordedNotes.length === 0) {
             this.arrangementViewElement.textContent = 'No notes recorded.';
             return;
         }
 
-        // Create Rows
         this.createRows();
 
-        const startTime = recordedNotes[0].time;  // Get the start time of the first note
+        const startTime = recordedNotes[0].time;
 
         recordedNotes.forEach(noteData => {
             const noteElement = document.createElement('div');
-            // Create a text string that includes both the note and time
-            const noteText = `${noteData.note} (${(noteData.time - startTime).toFixed(2)}s)`;  // Display note and relative time
+            const noteText = `${noteData.note} (${(noteData.time - startTime).toFixed(2)}s)`; 
 
             noteElement.textContent = noteText;
             noteElement.classList.add('arrangement-note');
-            noteElement.setAttribute('data-note', noteData.note);  // Store note for row restriction
+            noteElement.setAttribute('data-note', noteData.note); 
 
-            // Calculate the position of the note based on its time relative to the start time
             const relativeTime = noteData.time - startTime;
-            noteElement.style.left = (relativeTime * 50) + 'px'; // Adjust the scaling factor (50) as needed
-            noteElement.style.top = this.getRowPosition(noteData.note) + 'px';  // Position on correct row
+            noteElement.style.left = (relativeTime * this.pixelsPerSecond) + 'px'; // Adjust the scaling factor
+            noteElement.style.top = this.getRowPosition(noteData.note) + 'px'; // Position on correct row
 
-            // Make notes draggable
             noteElement.draggable = true;
             this.arrangementViewElement.appendChild(noteElement);
-
         });
 
-        // Attach drag events to the arrangement view *after* notes are added
         this.attachDragEvents();
     }
 
@@ -499,7 +584,7 @@ class Visualizer {
         this.analyser.getByteTimeDomainData(this.dataArray);
 
         this.waveformContext.lineWidth = 2;
-        this.waveformContext.strokeStyle = "rgb(252, 18, 96, 0.8)";
+        this.waveformContext.strokeStyle = "rgb(252, 50, 196)";
 
         this.waveformContext.beginPath();
 
@@ -664,9 +749,10 @@ class Metronome {
     }
 }
 
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize AudioContext
-    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     // Define note frequencies
     const noteFrequencies = {
@@ -701,65 +787,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const bpmDisplay = document.getElementById('bpm-display');
     const tapButton = document.getElementById('tap-button');
     const metronomeButton = document.getElementById('metronome-button');
-    let currentWaveType = 'sine';
-    const waveforms = [
-        { icon: '∿', name: 'Sine', value: 'sine' },
-        { icon: '▇', name: 'Square', value: 'square' },
-        { icon: '◺', name: 'Triangle', value: 'triangle' },
-        { icon: '◿', name: 'Sawtooth', value: 'sawtooth' }
-    ];
 
-    let currentIndex = 0;
-
-    const display = document.querySelector('.display');
-    const leftButton = document.querySelector('.left');
-    const rightButton = document.querySelector('.right');
-
-    function updateDisplay() {
-        const currentWave = waveforms[currentIndex];
-        display.innerHTML = `
-            <span class="wave-icon">${currentWave.icon}</span>
-        `;
-    }
-
-    leftButton.addEventListener('click', () => {
-        currentIndex = (currentIndex - 1 + waveforms.length) % waveforms.length;
-        updateDisplay();
-    });
-
-    rightButton.addEventListener('click', () => {
-        currentIndex = (currentIndex + 1) % waveforms.length;
-        updateDisplay();
-    });
-
-    // Instantiate the Synth
+    // Initialize Synth
     const synth = new Synth(audioContext);
 
-    // Instantiate the Visualizer
-    const visualizer = new Visualizer(audioContext, waveformCanvas, eqCanvas, synth.analyser, synth.eqAnalyser);
-
-    // Connect the source to the visualizer
+    // Initialize Visualizer
+    const visualizer = new Visualizer(audioContext, waveformCanvas, eqCanvas);
     visualizer.connectSource(synth.analyser);
     visualizer.connectSource(synth.eqAnalyser);
-
-    //Start visualizations
     visualizer.drawWaveform();
     visualizer.drawEQ();
 
-    // Instantiate the Keyboard
-    const keyboard = new Keyboard(synth, noteFrequencies);
+    // Initialize Keyboard
+    const keyboard = new Keyboard(synth, noteFrequencies, keys);
 
-    // Instantiate the Arrangement
+    // Initialize Arrangement
     const arrangement = new Arrangement(audioContext, noteFrequencies);
 
-    // Instantiate the ArrangementView
-    const arrangementView = new ArrangementView(arrangement, arrangementViewElement, noteFrequencies);
+    // Initialize ArrangementView
+    const arrangementView = new ArrangementView(arrangement, arrangementViewElement);
 
-    // Instantiate the Metronome
+    arrangement.arrangementView = arrangementView;
+    
+    // Initialize Metronome
     const metronome = new Metronome(audioContext, bpmDisplay, tapButton, metronomeButton);
 
-
-    // Effect Faders
+    // Event Listeners for Effects
     delayFader.addEventListener('input', (event) => {
         synth.setDelayTime(event.target.value / 100);
     });
@@ -768,7 +821,10 @@ document.addEventListener('DOMContentLoaded', () => {
         synth.setReverbTime(event.target.value);
     });
 
-    // Effect Toggles
+    chorusFader.addEventListener('input', (event) => {
+        synth.setChorusTime(event.target.value);
+    });
+
     delayToggle.addEventListener('change', () => {
         synth.enableDelay(delayToggle.checked);
     });
@@ -781,327 +837,88 @@ document.addEventListener('DOMContentLoaded', () => {
         synth.enableChorus(chorusToggle.checked);
     });
 
+    recordButton.addEventListener('click', () => {
+        if (!arrangement.isRecording) {
+            arrangement.startRecording();
+            recordButton.textContent = 'Stop Recording';
+            playbackButton.disabled = true;
+            loopButton.disabled = true;
+        } else {
+            arrangement.stopRecording();
+            recordButton.textContent = 'Start Recording';
+            playbackButton.disabled = false;
+            loopButton.disabled = false;
+        }
+        arrangementView.render(); // Render the recorded notes
+    });
+
+    playbackButton.addEventListener('click', () => {
+        arrangement.play(synth.playNote.bind(synth));
+    });
+
+    loopButton.addEventListener('click', () => {
+        arrangement.setLooping(!arrangement.isLooping, synth.playNote.bind(synth));
+    });
+
+    // Event Listeners for Waveform Selection
+    const waveforms = [
+        { icon: '∿', name: 'Sine', value: 'sine' },
+        { icon: '▇', name: 'Square', value: 'square' },
+        { icon: '◺', name: 'Triangle', value: 'triangle' },
+        { icon: '◿', name: 'Sawtooth', value: 'sawtooth' }
+    ];
+
+    let currentIndex = 0;
+    const display = document.querySelector('.display');
+    const leftButton = document.querySelector('.left');
+    const rightButton = document.querySelector('.right');
+
     function updateDisplay() {
         const currentWave = waveforms[currentIndex];
-        currentWaveType = currentWave.value;
-        display.innerHTML = `
-            <span class="wave-icon">${currentWave.icon}</span>
-        `;
-        currentWaveType = currentWave.value;
-
+        display.innerHTML = `<span class="wave-icon">${currentWave.icon}</span>`;
+        synth.setWaveType(currentWave.value);
     }
-    
+
+    function findElementByDataNote(note) {
+        return document.querySelector(`[data-note="${note}"]`);
+    }
+
     leftButton.addEventListener('click', () => {
         currentIndex = (currentIndex - 1 + waveforms.length) % waveforms.length;
         updateDisplay();
     });
-    
+
     rightButton.addEventListener('click', () => {
         currentIndex = (currentIndex + 1) % waveforms.length;
         updateDisplay();
     });
-    
-    let currentDelayTime = 0.3;
-    delayFader.addEventListener('input', (event) => {
-        currentDelayTime = event.target.value / 100;
-        createDelayNode(); 
-    });
-    
-    let currentReverbTime = 1;        
-    reverbFader.addEventListener('input', (event) => {
-        currentReverbTime = event.target.value;
-        createReverbNode();
-    });
-     
-    let delayNode = null;
-    let convolverNode = null;
-    let chorusNode = null;
-    let lfo = null;
-    
-    const attackTime = 0.12;
-    const decayTime = 2;
-    const sustainLevel = 7;
-    const releaseTime = 2;
-    
-    const waveformContext = waveformCanvas.getContext("2d");
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
-    
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    let isMouseDown = false;
-    let triggeredKeys = new Set();
-    
-    // OSCILLATOR VIEWER ...
-    function drawWaveform() {
-        waveformContext.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
-        analyser.getByteTimeDomainData(dataArray);
-    
-        waveformContext.lineWidth = 2;
-        waveformContext.strokeStyle = "rgb(252, 50, 196)";
-    
-        waveformContext.beginPath();
-    
-        const sliceWidth = (waveformCanvas.width * 1.0) / bufferLength;
-        let x = 0;
-    
-        for (let i = 0; i < bufferLength; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = (v * waveformCanvas.height) / 2;
-    
-            if (i === 0) {
-              waveformContext.moveTo(x, y);
-            } else {
-              waveformContext.lineTo(x, y);
-            }
-    
-            x += sliceWidth;
+
+    document.addEventListener('keyup', (event) => {
+        const key = event.key.toLowerCase();
+        let note = keyboard.findKeyNote(key);
+        if (note) {
+            const keyElement = findElementByDataNote(note);
+            keyElement.classList.remove('active');
         }
-    
-        waveformContext.lineTo(waveformCanvas.width, waveformCanvas.height / 2);
-        waveformContext.stroke();
-    
-        requestAnimationFrame(drawWaveform);
-    }
-    function drawEQ() {
-        eqAnalyser.getByteFrequencyData(eqDataArray);
-    
-        eqContext.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
-    
-        const barWidth = (eqCanvas.width / eqBufferLength) * 2.5;
-        let barHeight = 0;
-        let x = 0;
-    
-        for (let i = 0; i < eqBufferLength; i++) {
-            barHeight = Math.max(0, eqDataArray[i] - 10); // Decay
-    
-            eqContext.fillStyle = 'rgb(' + (barHeight + 100) + ',50, 196)';
-            eqContext.fillRect(x, eqCanvas.height - barHeight / 2, barWidth, barHeight / 2);
-    
-            x += barWidth + 1;
-        }
-    
-        requestAnimationFrame(drawEQ);
-    }
-        
-    function createChorusNode() {
-        chorusNode = audioContext.createDelay();
-        chorusNode.delayTime.value = 0.03; // 30ms delay
-    
-        lfo = audioContext.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 1;
-    
-        const lfoGain = audioContext.createGain();
-        lfoGain.gain.value = 0.32;
-    
-        lfo.connect(lfoGain);
-        lfoGain.connect(chorusNode.delayTime);
-        lfo.start();
-    
-        return chorusNode;
-    }
-    
-    function createDelayNode() {
-        delayNode = audioContext.createDelay(5.0);
-        delayNode.delayTime.value = currentDelayTime; // 0.1 to 0.8?
-    
-        const feedbackNode = audioContext.createGain();
-        feedbackNode.gain.value = 0.4; 
-    
-        delayNode.connect(feedbackNode);
-        delayNode.connect(delayNode);
-    
-        return delayNode;
-    }
-    
-    async function createReverbNode() {
-        convolverNode = audioContext.createConvolver();
-    
-        // Generate a simple impulse response (white noise decay)
-        const sampleRate = audioContext.sampleRate;
-        const length = sampleRate * currentReverbTime; 
-        const impulseBuffer = audioContext.createBuffer(2, length, sampleRate);
-        for (let channel = 0; channel < impulseBuffer.numberOfChannels; channel++) {
-            const channelData = impulseBuffer.getChannelData(channel);
-            for (let i = 0; i < length; i++) {
-                channelData[i] = (Math.random() * 2 - 1) * (1 - i / length); // White noise decay
+    });
+
+    document.addEventListener('keydown', (event) => {
+        const key = event.key.toLowerCase();
+        let note = keyboard.findKeyNote(key);
+
+        if (note) {
+            console.log(`Playing note: ${note}`);
+            synth.playNote(noteFrequencies[note]);
+            const keyElement = findElementByDataNote(note);
+            keyElement.classList.add('active');
+
+            if (arrangement.isRecording) {
+                arrangement.addNote(note, audioContext.currentTime); // Add note to arrangement
+                arrangementView.render(); // Render the updated arrangement
             }
         }
-    
-        convolverNode.buffer = impulseBuffer;
-        return convolverNode;
-    }
-    
-    function highlghtAnimation() {
-      let elements = document.getElementsByClassName('oscillator-wave-viewer');
-    
-      for (let i = 0; i < elements.length; i++) {
-          let element = elements[i];
-          element.style.borderTop = "3px solid rgb(60, 0, 0)";
-          setTimeout(() => {
-              element.style.borderTop = "3px solid rgb(40, 0, 0)";
-          }, 4200);
-      }
-    }
-    
-    function playNote(frequency) {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        const rampValue = 0.001;
-        oscillator.type = currentWaveType;
-    
-        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    
-        gainNode.gain.setValueAtTime(1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(rampValue, audioContext.currentTime + 1);
-        gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + attackTime);
-        gainNode.gain.exponentialRampToValueAtTime(sustainLevel,audioContext.currentTime + attackTime + decayTime);
-    
-        oscillator.connect(analyser);
-        oscillator.connect(gainNode);
-    
-        let currentNode = gainNode;
-    
-        if (chorusToggle.checked && !chorusNode) {
-            chorusNode = createChorusNode();
-        }
-    
-        if (chorusToggle.checked) {
-            currentNode.connect(chorusNode);
-            currentNode = chorusNode;
-        }
-    
-        if (delayToggle.checked && !delayNode) {
-            delayNode = createDelayNode();
-        }
-    
-        if (reverbToggle.checked && !convolverNode) {
-            createReverbNode().then(() => {
-                if (delayToggle.checked) {
-                    gainNode.connect(delayNode);
-                    delayNode.connect(convolverNode);
-                    convolverNode.connect(audioContext.destination);
-                } else {
-                    gainNode.connect(convolverNode);
-                    convolverNode.connect(audioContext.destination);
-                }
-            });
-        } else if (reverbToggle.checked) {
-            if (delayToggle.checked) {
-                gainNode.connect(delayNode);
-                delayNode.connect(convolverNode);
-                convolverNode.connect(audioContext.destination);
-            } else {
-                gainNode.connect(convolverNode);
-                convolverNode.connect(audioContext.destination);
-            }
-        } else if (delayToggle.checked) {
-            gainNode.connect(delayNode);
-            delayNode.connect(audioContext.destination);
-        } else {
-            gainNode.connect(audioContext.destination);
-        }
-    
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 1);
-    
-        oscillator.stop(audioContext.currentTime + attackTime + decayTime + releaseTime);
-    
-        gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(rampValue, audioContext.currentTime + releaseTime);
-    
-        highlghtAnimation();
-        drawWaveform()
-    }
-    
-    keys.forEach(key => {
-        const note = key.getAttribute('data-note');
-        key.addEventListener('mousedown', () => {
-            const frequency = noteFrequencies[note];
-            playNote(frequency);
-            key.classList.add('active');
-        });
-    
-        key.addEventListener('mouseup', () => {
-            key.classList.remove('active');
-        });
-    
-        key.addEventListener('mouseleave', () => {
-            key.classList.remove('active');
-        });
-    
-        key.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const note = key.getAttribute('data-note');
-            const frequency = noteFrequencies[note];
-            playNote(frequency);
-            key.classList.add('active');
-        });
-    
-        key.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            key.classList.remove('active');
-        });
-        
-        key.addEventListener('mousedown', () => {
-            isMouseDown = true;
-            triggeredKeys.clear(); // Clear previously triggered keys
-            if (!triggeredKeys.has(note)) {
-                playNote(noteFrequencies[note]);
-                triggeredKeys.add(note);
-                key.classList.add('active');
-            }
-        });
-      
-          // Trigger note on hover while holding mouse down
-        key.addEventListener('mouseenter', () => {
-            if (isMouseDown && !triggeredKeys.has(note)) {
-                playNote(noteFrequencies[note]);
-                triggeredKeys.add(note);
-                key.classList.add('active');
-            }
-        });
-    });           
-    
-    document.addEventListener('mouseup', () => {
-        isMouseDown = false;
-        triggeredKeys.clear(); // Reset triggered keys when mouse is released
     });
-    
-    document.addEventListener('mousedown', () => {
-        isMouseDown = true;
-    });
-    
-    // FX
-    delayToggle.addEventListener('change', () => {
-        if (!delayToggle.checked && delayNode) {
-          delayNode.disconnect();
-          delayNode = null;
-        }
-    });
-    
-    reverbToggle.addEventListener('change', () => {
-        if (!reverbToggle.checked && convolverNode) {
-          convolverNode.disconnect();
-          convolverNode = null;
-        }
-    });
-    
-    chorusToggle.addEventListener('change', () => {
-        if (!chorusToggle.checked && chorusNode) {
-          chorusNode.disconnect();
-          chorusNode = null;
-          if (lfo) {
-            lfo.stop();
-            lfo.disconnect();
-            lfo = null;
-          }
-        }
-    });
-    
-    drawWaveform();
-    
+
+    updateDisplay();
+    arrangementView.render();
 });
