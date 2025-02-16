@@ -27,9 +27,9 @@ class Synth {
         }
 
         // Initial Effect Nodes
-        this.createDelayNode();
-        this.createReverbNode();
-        this.createChorusNode();
+        //this.createDelayNode();
+        //this.createReverbNode();
+        //this.createChorusNode();
     }
 
     playNote(frequency) {
@@ -278,16 +278,16 @@ class Arrangement {
         this.isRecording = false;
         this.isLooping = false;
         this.loopTimeout = null;
-        this.recordingStopTime = null; // Store the time when recording was stopped
-        this.startTime = null;  // Start time of the arrangement for playback
+        this.recordingStopTime = null;
+        this.startTime = null;
         this.playbackTimeoutIds = [];  //Store timeout IDs so we can clear them when stopping playback
+
     }
 
     startRecording() {
         this.recordedNotes = [];
         this.isRecording = true;
-        this.startTime = this.audioContext.currentTime;  // Capture start time
-
+        this.startTime = this.audioContext.currentTime;  
     }
 
     stopRecording() {
@@ -309,19 +309,19 @@ class Arrangement {
         this.recordedNotes[index].time = newTime;
     }
      
-    play(playNoteFunction) {  // Pass in a function to play the notes
+    play(playNoteFunction) { 
         if (this.recordedNotes.length === 0) return;
-        this.stop(); //Stop any existing playback, clear timeout array before continuing
-        this.startTime = this.audioContext.currentTime; //For accurate timing, calculate start time on play
-        this.playbackTimeoutIds = []; // clear the timeout IDs array
+        this.stop(); 
+        this.startTime = this.audioContext.currentTime;
+        this.playbackTimeoutIds = []; 
 
         this.recordedNotes.forEach(noteData => {
              const relativeTime = noteData.time - this.startTime;
-            // create and store timeoutIDs
-            const timeoutId = setTimeout(() => {
+
+             const timeoutId = setTimeout(() => {
                 const frequency = this.noteFrequencies[noteData.note];
-                playNoteFunction(frequency);  // Calling PlayNote from the synth class
-            }, relativeTime * 1000);  // Convert to milliseconds
+                playNoteFunction(frequency); 
+            }, relativeTime * 1000);
             this.playbackTimeoutIds.push(timeoutId);
         });
     }
@@ -839,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyser.getByteTimeDomainData(dataArray);
     
         waveformContext.lineWidth = 2;
-        waveformContext.strokeStyle = "rgb(252, 18, 96, 0.8)";
+        waveformContext.strokeStyle = "rgb(252, 50, 196)";
     
         waveformContext.beginPath();
     
