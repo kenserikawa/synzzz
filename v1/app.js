@@ -1,14 +1,14 @@
 class Synth {
     constructor(audioContext) {
         this.audioContext = audioContext;
-        this.oscillator = null; // Current oscillator node (if any)
-        this.gainNode = null; // Current gain node (if any)
-        this.delayNode = null; // Delay effect node
-        this.reverbNode = null; // Reverb effect node
-        this.chorusNode = null; // Chorus effect node
-        this.lfo = null; // LFO for chorus
-        this.analyser = audioContext.createAnalyser(); //Analysers here
-        this.eqAnalyser = audioContext.createAnalyser(); //Analysers here
+        this.oscillator = null; 
+        this.gainNode = null; 
+        this.delayNode = null;
+        this.reverbNode = null;
+        this.chorusNode = null;
+        this.lfo = null;
+        this.analyser = audioContext.createAnalyser();
+        this.eqAnalyser = audioContext.createAnalyser();
 
         this.currentWaveType = 'sine';
         this.currentDelayTime = 0.3;
@@ -849,7 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playbackButton.disabled = false;
             loopButton.disabled = false;
         }
-        arrangementView.render(); // Render the recorded notes
+        arrangementView.render();
     });
 
     playbackButton.addEventListener('click', () => {
@@ -860,7 +860,6 @@ document.addEventListener('DOMContentLoaded', () => {
         arrangement.setLooping(!arrangement.isLooping, synth.playNote.bind(synth));
     });
 
-    // Event Listeners for Waveform Selection
     const waveforms = [
         { icon: '∿', name: 'Sine', value: 'sine' },
         { icon: '▇', name: 'Square', value: 'square' },
@@ -913,8 +912,8 @@ document.addEventListener('DOMContentLoaded', () => {
             keyElement.classList.add('active');
 
             if (arrangement.isRecording) {
-                arrangement.addNote(note, audioContext.currentTime); // Add note to arrangement
-                arrangementView.render(); // Render the updated arrangement
+                arrangement.addNote(note, audioContext.currentTime);
+                arrangementView.render();
             }
         }
     });
