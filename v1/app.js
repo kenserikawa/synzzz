@@ -42,7 +42,7 @@ class Synth {
 
         this.oscillator.connect(this.analyser);
         this.oscillator.connect(this.gainNode);
-
+ 
         let currentNode = this.gainNode;
 
         if (this.chorusNode) {
