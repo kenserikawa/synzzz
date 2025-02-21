@@ -293,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         convolverNode.buffer = impulseBuffer;
-        //log('reverb node created')
         
         return convolverNode;
     }
@@ -314,10 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         const rampValue = 0.001;
+
         oscillator.type = currentWaveType;
-
-        //log('Frequency: ' + frequency)
-
         oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
         gainNode.gain.setValueAtTime(1, audioContext.currentTime);
