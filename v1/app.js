@@ -72,8 +72,31 @@ class Synth {
     }
 
     stopNote() {
+        if (this.oscillator && this.gainNode) {
+            const now = this.audioContext.currentTime;
+            const release = now + this.releaseTime;
+    
+            this.gainNode.gain.cancelScheduledValues(now);
+    
+            const currentGain = this.gainNode.gain.value;
+    
+            this.gainNode.gain.setValueAtTime(currentGain, now);
+            this.gainNode.gain.exponentialRampToValueAtTime(0.001, release);
+            this.oscillator.stop(release);
 
+            setTimeout(() => {
+                if (this.oscillator) {
+                    this.oscillator.disconnect();
+                    this.oscillator = null;
+                }
+                if (this.gainNode) {
+                    this.gainNode.disconnect();
+                    this.gainNode = null;
+                }
+            }, this.releaseTime * 1000);
+        }
     }
+    
 
     setWaveType(type) {
         this.currentWaveType = type;
@@ -226,6 +249,7 @@ class Keyboard {
 
             key.addEventListener('mouseleave', () => {
                 key.classList.remove('active');
+                this.synth.stopNote();
             });
 
             key.addEventListener('touchstart', (e) => {
@@ -238,6 +262,7 @@ class Keyboard {
             key.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 key.classList.remove('active');
+                this.synth.stopNote();
             });
 
             key.addEventListener('mousedown', () => {
