@@ -97,7 +97,6 @@ class Synth {
         }
     }
     
-
     setWaveType(type) {
         this.currentWaveType = type;
     }
@@ -212,26 +211,39 @@ class Keyboard {
     }
 
     findKeyNote(key) {
-        switch (key) {
-            case 'a': return 'C';
-            case 's': return 'D';
-            case 'd': return 'E';
-            case 'f': return 'F';
-            case 'g': return 'G';
-            case 'h': return 'A';
-            case 'j': return 'B';
-            case 'k': return 'C1';
-            case 'l': return 'D1';
-
-            case 'w': return 'C#';
-            case 'e': return 'D#';
-            case 't': return 'F#';
-            case 'y': return 'G#';
-            case 'u': return 'A#';
-            case 'o': return 'C#1';
-            case 'p': return 'D#1';
+        switch (key.toLowerCase()) {
+            // Lower row (lower octave)
+            case 'z': return 'C';
+            case 'x': return 'D';
+            case 'c': return 'E';
+            case 'v': return 'F';
+            case 'b': return 'G';
+            case 'n': return 'A';
+            case 'm': return 'B';
+    
+            case 'q': return 'C1';
+            case 'w': return 'D1';
+            case 'e': return 'E1';
+            case 'r': return 'F1';
+            case 't': return 'G1';
+            case 'y': return 'A1';
+            case 'u': return 'B1';
+    
+            case 's': return 'C#';
+            case 'd': return 'D#';
+            case 'g': return 'F#';
+            case 'h': return 'G#';
+            case 'j': return 'A#';
+    
+            case '2': return 'C#1';
+            case '3': return 'D#1';
+            case '5': return 'F#1';
+            case '6': return 'G#1';
+            case '7': return 'A#1';
+    
+            default: return null;
         }
-    }
+    }    
 
     attachEventListeners() {
         this.keys.forEach(key => {
