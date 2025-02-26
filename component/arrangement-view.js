@@ -90,7 +90,9 @@ export default class ArrangementView {
             'C1': 12, 'C#1': 13, 'D1': 14, 'D#1': 15, 'E1': 16, 'F1': 17, 'F#1': 18, 'G1': 19, 'G#1': 20, 'A1': 21, 'A#1': 22, 'B1': 23,
             'C2': 24, 'C#2': 25, 'D2': 26, 'D#2': 27, 'E2': 28, 'F2': 29 
         };
+        
         const rowHeight = 25; 
+
         for (const note in noteRows) {
             const row = document.createElement('div');
             row.classList.add('arrangement-row');

@@ -1,10 +1,10 @@
-import ArrangementView  from "./arrangement-view.js";
-import Arrangement  from "./arrangement.js";
-import Recorder from "./recorder.js";
-import Keyboard  from "./keyboard.js";
-import Metronome  from "./metronome.js";
-import Synth  from "./synth.js";
-import Visualizer  from "./visualizer.js";
+import ArrangementView  from "./component/arrangement-view.js";
+import Arrangement  from "./component/arrangement.js";
+import Recorder from "./component/recorder.js";
+import Keyboard  from "./component/keyboard.js";
+import Metronome  from "./component/metronome.js";
+import Synth  from "./component/synth.js";
+import Visualizer  from "./component/visualizer.js";
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
