@@ -1,5 +1,6 @@
 import ArrangementView  from "./arrangement-view.js";
 import Arrangement  from "./arrangement.js";
+import Recorder from "./recorder.js";
 import Keyboard  from "./keyboard.js";
 import Metronome  from "./metronome.js";
 import Synth  from "./synth.js";
@@ -10,7 +11,6 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 document.addEventListener('DOMContentLoaded', () => {
 
     const noteFrequencies = {
-
         'C': 130.81, 'C#': 138.59, 'D': 146.83, 'D#': 155.56,
         'E': 164.81, 'F': 174.61, 'F#': 185.00, 'G': 196.00,
         'G#': 207.65, 'A': 220.00, 'A#': 233.08, 'B': 246.94,
@@ -42,22 +42,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const metronomeButton = document.getElementById('metronome-button');
 
     const synth = new Synth(audioContext);
-
     const visualizer = new Visualizer(audioContext, waveformCanvas, eqCanvas);
+    const recorder = new Recorder(audioContext);
+
     visualizer.connectSource(synth.analyser);
     visualizer.connectSource(synth.eqAnalyser);
     visualizer.drawWaveform();
     visualizer.drawEQ();
 
     const keyboard = new Keyboard(synth, noteFrequencies, keys);
-
     const arrangement = new Arrangement(audioContext, noteFrequencies);
-
     const arrangementView = new ArrangementView(arrangement, arrangementViewElement);
-
+    const metronome = new Metronome(audioContext, bpmDisplay, tapButton, metronomeButton);
+    
     arrangement.arrangementView = arrangementView;
 
-    const metronome = new Metronome(audioContext, bpmDisplay, tapButton, metronomeButton);
 
     delayFader.addEventListener('input', (event) => {
         synth.setDelayTime(event.target.value / 100);
@@ -84,14 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     recordButton.addEventListener('click', () => {
-        if (!arrangement.isRecording) {
-            arrangement.startRecording();
+        if (!recorder.isRecording) {
+            recorder.start();
             recordButton.textContent = 'Stop Recording';
             playbackButton.disabled = true;
             loopButton.disabled = true;
         } else {
-            arrangement.stopRecording();
-            recordButton.textContent = 'Start Recording';
+            recorder.stop();
+            recordButton.textContent = '';
             playbackButton.disabled = false;
             loopButton.disabled = false;
         }
@@ -157,8 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const keyElement = findElementByDataNote(note);
             keyElement.classList.add('active');
 
-            if (arrangement.isRecording) {
-                arrangement.addNote(note, audioContext.currentTime);
+            if (recorder.isRecording) {
+                recorder.addNote(note, audioContext.currentTime);
                 arrangementView.render();
             }
         }

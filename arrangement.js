@@ -1,49 +1,45 @@
+import Recorder from "./recorder.js";
+
 export default class Arrangement {
     constructor(audioContext, noteFrequencies) {
         this.audioContext = audioContext;
         this.noteFrequencies = noteFrequencies;
-        this.recordedNotes = [];
-        this.isRecording = false;
+        this.recorder = new Recorder(audioContext);
+        this.notes = [];
         this.isLooping = false;
         this.loopTimeout = null;
-        this.recordingStopTime = null;
-        this.startTime = null;
         this.arrangementView = null;
-        this.playbackTimeoutIds = [];  
+        this.playbackTimeoutIds = [];
     }
 
     startRecording() {
-        this.recordedNotes = [];
-        this.isRecording = true;
-        this.startTime = this.audioContext.currentTime;  
+        this.recorder.start();
     }
 
     stopRecording() {
-        this.isRecording = false;
-        this.recordingStopTime = this.audioContext.currentTime;
+        this.recorder.stop();
+        this.notes = this.recorder.getNotes();
     }
 
     addNote(note, time) {
-        if (this.isRecording) {
-            this.recordedNotes.push({ note: note, time: time });
-        }
+        this.recorder.addNote(note, time);
     }
 
     removeNote(index) {
-        this.recordedNotes.splice(index, 1);
+        this.notes.splice(index, 1);
     }
 
     moveNote(index, newTime) {
-        this.recordedNotes[index].time = newTime;
+        this.notes[index].time = newTime;
     }
 
     play(playNoteFunction) { 
-        if (this.recordedNotes.length === 0) return;
+        if (this.notes.length === 0) return;
         this.stop(); 
         this.startTime = this.audioContext.currentTime;
-        this.recordedNotes.sort((a, b) => a.time - b.time);
+        this.notes.sort((a, b) => a.time - b.time);
 
-        this.recordedNotes.forEach(noteData => {
+        this.notes.forEach(noteData => {
             const noteTime = noteData.time - this.startTime;
             const playbackTime = this.startTime + noteTime; 
 
@@ -79,7 +75,7 @@ export default class Arrangement {
     }
 
     startLoop(playNoteFunction) {
-        if (this.recordedNotes.length === 0) return; 
+        if (this.notes.length === 0) return; 
 
         const loopDuration = this.recordingStopTime - this.startTime;
 
@@ -104,10 +100,10 @@ export default class Arrangement {
     }
 
     getNotes() {
-        return this.recordedNotes;  
+        return this.notes;  
     }
 
     setNotes(notes) {
-        this.recordedNotes = notes; 
+        this.notes = notes; 
     }
 }

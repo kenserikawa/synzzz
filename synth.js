@@ -13,6 +13,7 @@ export default class Synth {
         this.currentWaveType = 'sine';
         this.currentDelayTime = 0.3;
         this.currentReverbTime = 1;
+        this.currentChorusTime = 0.2;
 
         this.attackTime = 0;
         this.decayTime = 1;
