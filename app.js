@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const bpmDisplay = document.getElementById('bpm-display');
     const tapButton = document.getElementById('tap-button');
     const metronomeButton = document.getElementById('metronome-button');
+    
+    const display = document.querySelector('.display');
+    const leftButton = document.querySelector('.left');
+    const rightButton = document.querySelector('.right');
+    let currentIndex = 0;
 
     const synth = new Synth(audioContext);
     const visualizer = new Visualizer(audioContext, waveformCanvas, eqCanvas);
@@ -92,11 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loopButton.addEventListener('click', () => {
         arrangement.setLooping(!arrangement.isLooping, synth.playNote.bind(synth));
     });
-
-    let currentIndex = 0;
-    const display = document.querySelector('.display');
-    const leftButton = document.querySelector('.left');
-    const rightButton = document.querySelector('.right');
 
     function updateDisplay() {
         const currentWave = waveforms[currentIndex];
