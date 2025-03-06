@@ -11,7 +11,6 @@ export default class Keyboard {
 
     findKeyNote(key) {
         switch (key.toLowerCase()) {
-            // Lower row (lower octave)
             case 'z': return 'C';
             case 'x': return 'D';
             case 'c': return 'E';

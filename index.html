@@ -23,6 +23,13 @@
 
         <div class="piano-container">
             <div class="wave-selector">
+                <div class="effect-module">
+                    <label class="vollume synth-button">
+                        <input type="checkbox" id="volume-toggle"> 
+                        <span class="vollume button-face"></span>
+                    </label>
+                    <input id="volume-fader" type="range" min="0" max="100" orient="horizontal">
+                </div>
                 <div class="wave-modules">
                     <div class="wave-selector">
                         <button class="nav-button left">◀</button>
@@ -92,7 +99,6 @@
                 <div class="key black black-corner-border" data-note="A#1"></div>
                 <div class="key white-corner-border" data-note="B1"></div>
                 <!--    
-                
                 <div class="key white-corner-border" data-note="C2"></div>
                 <div class="key black black-corner-border" data-note="C#2"></div>
                 <div class="key white-corner-border" data-note="D2"></div>
@@ -106,7 +112,7 @@
                 <div class="key" data-note="A2"></div>
                 <div class="key black" data-note="A#2"></div>
                 <div class="key" data-note="B2"></div> 
-        -->
+                -->
             </div>
         </div>
     <div id="action-log"></div>

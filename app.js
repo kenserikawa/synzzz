@@ -12,7 +12,7 @@ import { waveforms } from "./util/waveforms.js";
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 document.addEventListener('DOMContentLoaded', () => {
-    const waveformCanvas = document.getElementById("waveformCanvas");
+    const waveformCanvas = document.getElementById('waveformCanvas');
     const eqCanvas = document.getElementById("eqCanvas");
     const keys = document.querySelectorAll('.key');
     const delayFader = document.getElementById('delay-fader');
@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const bpmDisplay = document.getElementById('bpm-display');
     const tapButton = document.getElementById('tap-button');
     const metronomeButton = document.getElementById('metronome-button');
-    
     const display = document.querySelector('.display');
     const leftButton = document.querySelector('.left');
     const rightButton = document.querySelector('.right');
+
     let currentIndex = 0;
 
     const synth = new Synth(audioContext);
