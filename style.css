@@ -1,599 +1,618 @@
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            color: gray;
-        }
+:root {
+    --wave-main-color: rgb(252, 50, 196);
+    --synth-base-color: #333;
+    --page-bg: #f0f0f0;
+    --ink: #333;
+    --muted-ink: #555;
+    --sb-track-color: transparent;
+    --sb-thumb-color: rgba(157, 51, 187, 0.8);
+    --sb-size: 14px;
+    --white-key-width: 40px;
+    --black-key-width: 30px;
+}
 
+body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--page-bg);
+    color: var(--muted-ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-        :root {
-            --wave-main-color: rgb(252, 50, 196 );
-            --sb-track-color: #232e3300;
-         /*    --sb-thumb-color: #6baf8da8; */
-         --sb-thumb-color: rgba(157, 51, 187, 0.796);
-            --sb-size: 14px;
-            --synth-base-color: #333;
-        }
-        
-        .pixel-font {
-            font-family: "Tiny5", serif;
-            font-weight: 400;
-            font-style: normal;
-        }
+.pixel-font {
+    font-family: "Tiny5", ui-monospace, monospace;
+    font-weight: 400;
+    font-style: normal;
+}
 
-        .navbar {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            background-color: #333;
-            color: white;
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 0px 5px 2px black;
-            padding: 5px 0;
-            z-index: 1000;
-            border-bottom: 5px solid rgb(0, 0, 0, 0.5);
-        }
-        
-        .main-container {
-            margin: 23rem;
-            padding-top: 150px;
-        }
+:focus-visible {
+    outline: 2px solid var(--wave-main-color);
+    outline-offset: 2px;
+}
 
-        .piano-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* transform: rotate(-90deg);  */
-            background-color: #333;
-            border-top-right-radius: 10px;
-            border-top-left-radius: 10px;
-            border-top: 3px solid rgba(143, 143, 143, 0.203);
-            border-top-right-radius: 10px;
-            border-top-left-radius: 10px;
-            background: linear-gradient(45deg, #333, rgba(40, 40, 40, 0.972));
-            margin-top: 150px;
-        }
+/* ── Layout ─────────────────────────────────────────────────────────────── */
 
-        .wave-selector {
-            padding-top: 20px;
-            margin: auto;
-            display: -webkit-inline-box;
-        }
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 5px 0;
+    background-color: var(--synth-base-color);
+    border-bottom: 5px solid rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 28px;
+    text-align: center;
+    text-shadow: 0 5px 2px black;
+}
 
-        .wave-selector input,
-        .wave-selector button {
-            font-size: 16px;
-            padding: 5px 10px;
-        }
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 16px 64px;
+}
 
-        .wave-type {
-            margin-right: 20px;
-        }
+/* ── Synth panel ────────────────────────────────────────────────────────── */
 
+.piano-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-top: 3px solid rgba(143, 143, 143, 0.2);
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(45deg, #333, rgba(40, 40, 40, 0.97));
+    color: #ddd;
+}
 
-        .nav-button {
-            background-color: #3e3e3e;
-            border: none;
-            color: gray;
-            font-size: 18px;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            text-shadow: 0px 0px 2px #b9b9b9;
-            box-shadow: 0px 2px 0px #272727;
-            border: 1px solid #272727;
-        }
-        
-        .display {
-            flex-grow: 1;
-            text-align: center;
-            background-color: #222;
-            margin: 0 10px;
-            border-radius: 3px;
-            padding: 3px;
-        }
-        
-        .wave-icon {
-            display: block;
-            font-size: 24px;
-            color:var(--wave-main-color);
-        }
-        
-        .wave-name {
-            display: block;
-            color: #ddd;
-            font-size: 14px;
-            margin-top: 5px;
-        }
+.control-panel {
+    display: flex;
+    align-items: center;
+    padding: 20px 10px 0;
+}
 
-        .effect-module {
-            display: inline-grid;
-            grid-template-rows: auto 1fr;
-            justify-items: center;
-            grid-template-columns: 0;
-            padding: 0px 15px;
-            margin: 2px;
-        }
-        
-        .delay-fader {
-            margin-top: 10px;
-            height: 100px;
-            width: 30px;
-        }
-        
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 44px;
-            height: 5px;
-            background: #ddd;
-            border-right: 4px solid #212121;
-            border-radius: 10px;
-            outline: none;
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-            margin-top: 35px;
-            margin-bottom: 25px;
-            background-color: #3f3f3f;
-            box-shadow: -1px 0px 2px #191919;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #333;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 1px solid rgb(60, 60, 60);
-            box-shadow: -2px 0px 2px black;
-    
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: #333;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 1px solid red;
+.effect-module {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 0 12px;
+}
 
-        }
+.module-label {
+    font-size: 11px;
+    color: #9a9a9a;
+    letter-spacing: 1px;
+}
 
-        .wave-modules {
-            margin: auto 10px;
-        }
-        .audio-visuals {
-            padding: 10px;
-            display: flex;
-            gap: 6px;
-        }
+/* Vertical faders: writing-mode keeps the layout box and pointer mapping vertical. */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 6px;
+    height: 64px;
+    margin: 0;
+    border-radius: 10px;
+    background-color: #3f3f3f;
+    box-shadow: inset 0 0 2px #191919;
+    cursor: pointer;
+}
 
-        .canvas-label {
-            position: absolute; /* Position it relative to the .oscillator-wave-viewer */
-            bottom: 0;          /* Align to the bottom */
-            right: 0;           /* Align to the right */
-            background-color: rgba(0, 0, 0, 0.3);  /* Optional: Add a background for readability */
-            color: white;        /* Optional: Set text color */
-            padding: 2px 4px;    /* Optional: Add some padding */
-            font-size: 0.7em;    /* Optional: Adjust font size */
-            border-top-left-radius: 30%;
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgb(60, 60, 60);
+    border-radius: 50%;
+    background: var(--synth-base-color);
+    box-shadow: 0 2px 2px black;
+}
 
-            border-bottom-right-radius: 100%;
-        }
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgb(60, 60, 60);
+    border-radius: 50%;
+    background: var(--synth-base-color);
+    box-shadow: 0 2px 2px black;
+}
 
-        .oscillator-wave-viewer {
-            position: relative;
-            padding: 5px;
-            margin-top: 5px;
-            max-height: 55px;
-            border-radius: 20%;
-            background-color: #141414;
-            border-top: 3px solid rgb(40, 0, 0);
-            transition: all 0.1s infinite;
-        }
+/* Waveform selector */
+.wave-nav {
+    display: flex;
+    align-items: center;
+    margin: 0 10px;
+}
 
-        div #waveformCanvas {
-            padding-top: 2px;
-        }
+.nav-button {
+    padding: 5px 10px;
+    border: 1px solid #272727;
+    border-radius: 5px;
+    background-color: #3e3e3e;
+    box-shadow: 0 2px 0 #272727;
+    color: gray;
+    font-size: 18px;
+    text-shadow: 0 0 2px #b9b9b9;
+    cursor: pointer;
+}
 
-        .piano {
-            display: flex;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 20px  rgba(0,0,0,0.9);
-        }
+.nav-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #272727;
+}
 
-        .key {
-            width: 40px;
-            height: 180px;
-            border: 1px solid #000;
-            border-radius: 0 0 5px 5px;
-            margin: 0 2px;
-            background-color: #fff;
-            transition: all 0.1s ease;
-            border-top: 4px solid black;
-            border-top: 4px solid black;
-            box-shadow: 0 4px rgba(0,0,0,0.9);
-            border-bottom-right-radius: inherit;
-            border-bottom: 12px solid  rgb(172, 172, 172, 0.3);
-            border-bottom-left-radius: inherit;
-        }
+.display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 64px;
+    margin: 0 10px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    background-color: #222;
+}
 
-        .key:first-child {
-            border-top-left-radius: 10px;
-        }
-        .key:last-child {
-            border-top-right-radius: 10px;
-        }
+.wave-icon {
+    font-size: 24px;
+    line-height: 1.1;
+    color: var(--wave-main-color);
+}
 
-        .key.black {
-            background-color: #1d1d1d;
-            height: 120px; 
-            width: 30px; 
-            margin-left: -15px; 
-            margin-right: -15px; 
-            z-index: 1;
-            border-bottom-right-radius: inherit;
-            border-bottom: 4px solid #000000;
-            border-bottom-left-radius: inherit;
-        }
+.wave-name {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #ddd;
+    text-transform: uppercase;
+}
 
-        .key.active,
-        .key.black.active {
-            background-color: rgba(163, 163, 163, 0.871);
-        }
+/* On/off LED buttons */
+.synth-button {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+}
 
-        .key.black.active {
-            background-color: #626262;
-        }
+.synth-button input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
-        .black-corner-border {
-            position: relative;
-            width: 200px;
-            height: 100px;
-        }
-        
-        .black-corner-border::after {
-            content: '';
-            position: absolute;
-            bottom: 0px;
-            right: 0px;
-            width: 28px;
-            height: 120px;
-            border-bottom-right-radius: 8px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            border-right: 2px solid rgba(255, 255, 255, 0.1);
-            border-bottom-left-radius: 8px;
-        }
-        
-        .white-corner-border {
-            position: relative;
-        }
-        
-        .white-corner-border::after {
-            content: '';
-            position: absolute;
-            bottom: 0px;
-            right: 0px;
-            width: 38px;
-            height: 179px;
-            border-bottom-right-radius: 4px;
-            border-bottom: 2px solidrgb(172, 172, 172, 0.3);
-            border-right: 2px solid  rgb(172, 172, 172, 0.3);
-            border-bottom-left-radius: 4px;
-        }
+.button-face {
+    position: absolute;
+    inset: 0;
+    border: 1px solid #2a2a2a;
+    border-radius: 50%;
+    background-color: var(--synth-base-color);
+    box-shadow: 0 3px #272727;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
 
-        .synth-button {
-            display: inline-block;
-            position: relative;
-            width: 30px;
-            height: 30px;
-        }
+.button-face::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
 
-        .synth-button input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+.synth-button input:checked + .button-face {
+    background-color: #2f2f2f;
+}
 
-        .button-face {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #333;
-            border-radius: 50%;
-            border: 1px solid #2a2a2a;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0px 3px #272727;
-        }
+.synth-button input:focus-visible + .button-face {
+    outline: 2px solid var(--wave-main-color);
+    outline-offset: 2px;
+}
 
-        .button-face::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
+.volume.button-face::after { background-color: rgb(110, 100, 60); }
+.delay.button-face::after  { background-color: rgb(51, 96, 57); }
+.reverb.button-face::after { background-color: rgb(102, 59, 90); }
+.chorus.button-face::after { background-color: rgb(62, 96, 114); }
 
-        .synth-button input:checked + .button-face {
-            background-color: #2f2f2f;
-        }
+.volume.synth-button input:checked + .button-face::after {
+    background-color: rgb(255, 214, 64);
+    box-shadow: 0 0 5px rgb(255, 214, 64);
+}
 
-        .chorus.button-face::after {
-            background-color: rgb(62, 96, 114);
-        }
+.delay.synth-button input:checked + .button-face::after {
+    background-color: rgb(0, 255, 34);
+    box-shadow: 0 0 5px rgb(0, 255, 47);
+}
 
-        .reverb.button-face::after {
-            background-color:  rgb(102, 59, 90);
-        }
+.reverb.synth-button input:checked + .button-face::after {
+    background-color: rgb(255, 44, 195);
+    box-shadow: 0 0 5px rgb(255, 44, 195);
+}
 
-        .delay.button-face::after {
-            background-color: rgb(51, 96, 57);
-        }
+.chorus.synth-button input:checked + .button-face::after {
+    background-color: rgb(95, 199, 255);
+    box-shadow: 0 0 5px rgb(49, 255, 231);
+}
 
-        .chorus.synth-button input:checked + .button-face::after {
-            background-color: rgb(95, 199, 255);
-            box-shadow: 0 0 5px rgb(49, 255, 231);
-        }
+/* Oscilloscope and EQ screens */
+.audio-visuals {
+    display: flex;
+    gap: 6px;
+    padding: 10px;
+}
 
+.oscillator-wave-viewer {
+    position: relative;
+    padding: 5px;
+    border-top: 3px solid rgb(40, 0, 0);
+    border-radius: 20%;
+    background-color: #141414;
+    line-height: 0;
+}
 
-        .reverb.synth-button input:checked + .button-face::after {
-            background-color: rgb(255, 44, 195);
-            box-shadow: 0 0 5px rgb(255, 44, 195);
-        }
+.canvas-label {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 2px 4px;
+    border-top-left-radius: 30%;
+    border-bottom-right-radius: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 0.7em;
+    line-height: 1.2;
+}
 
-        .delay.synth-button input:checked + .button-face::after {
-            background-color: rgb(0, 255, 34);
-            box-shadow: 0 0 5px rgb(0, 255, 47);
-        }
+/* ── Keys ───────────────────────────────────────────────────────────────── */
 
-        .controls {
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        #bpm-display {
-            font-size: 36px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+.piano {
+    display: flex;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 20px rgba(0, 0, 0, 0.9);
+    touch-action: none;      /* sliding a finger plays a glissando instead of scrolling */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
 
-        .record-ui {
-    
-            padding: 20px;
-        }
-        
-        .button-container {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        
-        .control-button {
-            font-size: large;
-            border: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .control-button:hover {
-            transform: translateY(-2px);
-            transform: translateX(-2px, 2px);
-        }
-        
-        .control-button:active {
-            transform: translateY(1px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        
-        .control-button i {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        
-        .control-button span {
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        
-        #record-button {
-            color: #e74c3c;
-        }
-        
-        #playback-button {
-            color: #2ecc71;
-        }
-        
-        #loop-button {
-            color: #3498db;
-        }
-        
-        #record-button.active {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
-        #playback-button.active {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        #loop-button.active {
-            background-color: #3498db;
-            color: white;
-        }
-  
-        #arrangement-view {
-            background-color: #ffffff;
-            border-radius: 5px;
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        #cursor-line {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background-color: #e74c3c;
-            transition: left 0.1s linear;
-            z-index: 1000;
-            pointer-events: none; /* Ensure the cursor doesn't interfere with clicks */
-        } 
+.key {
+    position: relative;
+    flex: none;
+    width: var(--white-key-width);
+    height: 180px;
+    margin: 0 2px;
+    border: 1px solid #000;
+    border-top: 4px solid black;
+    border-bottom: 12px solid rgba(172, 172, 172, 0.3);
+    border-radius: 0 0 5px 5px;
+    background-color: #fff;
+    box-shadow: 0 4px rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
 
-        #arrangement-view {
-            position: relative;
-            width: 100%;
-            height: 400px;
-            overflow: auto;
-            border: 1px solid rgba(128, 128, 128, 0.36);
-        }
-        
+.key:first-child {
+    border-top-left-radius: 10px;
+}
 
-        #arrangement-view::-webkit-scrollbar {
-            width: var(--sb-size)
-        }
-        
-        #arrangement-view::-webkit-scrollbar-track {
-            background: var(--sb-track-color);
-            border-radius: 3px;
-        }
-        
-        #arrangement-view::-webkit-scrollbar-thumb {
-            background: var(--sb-thumb-color);
-            border-radius: 3px;
-            
-        }
-        
-        @supports not selector(::-webkit-scrollbar) {
-            #arrangement-view {
-            scrollbar-color: var(--sb-thumb-color)
-                            var(--sb-track-color);
-            }
-        }
-        .grid-container {
-            position: relative;
-            min-height: 100%;
-            min-width: 100%;
-        }
-        
-        .arrangement-row {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 25px; /* Match your rowHeight */
-            border-bottom: 1px dashed rgba(64, 64, 64, 0.191);
-        }
-        
-        #cursor-line {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background-color: red;
-            z-index: 1000;
-            pointer-events: none;
-            height:233%;
-        }
+.key:last-child {
+    border-top-right-radius: 10px;
+}
 
-        .note-label {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 30px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e0e0e0;
-            border-right: 1px solid #ccc;
-            z-index: 2;
-        }
-        
-        .grid-line {
-            position: absolute;
-            background-color: #ddd;
-        }
-        
-        .grid-line.vertical {
-            top: 0;
-            bottom: 0;
-            width: 1px;
-        }
-        
-        .grid-line.horizontal {
-            left: 30px; /* Align with the end of note labels */
-            right: 0;
-            height: 1px;
-        }
-        
-        .arrangement-note {
-            position: absolute;
-            background-color: #4caf4f9c;
-            color: white;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 12px;
-            cursor: move;
-            z-index: 10;
-            top: 2px; /* Center vertically in the row */
-            height: 16px; /* Slightly smaller than row height */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .arrangement-note.dragging {
-            opacity: 0.7;
-        }
+.key.black {
+    z-index: 1;
+    width: var(--black-key-width);
+    height: 120px;
+    margin: 0 calc(var(--black-key-width) / -2);
+    border-bottom: 4px solid #000;
+    background-color: #1d1d1d;
+}
 
-        @media screen and (max-width: 768px) {
-            .main-container {
-                padding-top: 400px;
-            }
-            .record-ui {
-                padding-right:170px;
-            }
-            .record-ui,
-            .piano-container {
-                transform: rotate(-90deg); 
-            }
-        }
-        @media screen and (orientation: landscape) and (max-width: 768px) {
-      /*       body {
-                display: none;
-            }
-            #landscape-warning {
-                display: flex; 
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                text-align: center;
-                background-color: #ffcccc;
-                color: #333; 
-                font-size: 20px; 
-                font-weight: bold; 
-            } */
+.key.active {
+    background-color: rgba(163, 163, 163, 0.87);
+}
 
-        }
+.key.black.active {
+    background-color: #626262;
+}
+
+/* Computer-keyboard shortcut printed on each key */
+.key::before {
+    content: attr(data-shortcut);
+    position: absolute;
+    right: 0;
+    bottom: 8px;
+    left: 0;
+    color: #9a9a9a;
+    font-family: "Tiny5", ui-monospace, monospace;
+    font-size: 12px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.key.black::before {
+    color: #777;
+}
+
+@media (hover: none) {
+    .key::before {
+        content: none;
+    }
+}
+
+.black-corner-border::after,
+.white-corner-border::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border-right: 2px solid rgba(172, 172, 172, 0.3);
+    border-bottom: 2px solid rgba(172, 172, 172, 0.3);
+    border-radius: 0 0 4px 4px;
+    pointer-events: none;
+}
+
+.white-corner-border::after {
+    width: calc(var(--white-key-width) - 2px);
+    height: 100%;
+}
+
+.black-corner-border::after {
+    width: calc(var(--black-key-width) - 2px);
+    height: 100%;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0 0 8px 8px;
+}
+
+/* ── Recorder ───────────────────────────────────────────────────────────── */
+
+.record-ui {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    max-width: 860px;
+}
+
+.transport {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+#bpm-display {
+    min-width: 5.5ch;
+    color: var(--ink);
+    font-size: 36px;
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.control-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid #272727;
+    border-radius: 6px;
+    background-color: var(--synth-base-color);
+    box-shadow: 0 3px #1d1d1d;
+    color: #ddd;
+    font-size: 14px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+}
+
+.control-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.control-button:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px #1d1d1d;
+}
+
+.control-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#record-button .icon { color: #e74c3c; }
+#playback-button .icon { color: #2ecc71; }
+#loop-button .icon { color: #3498db; }
+
+#record-button.active,
+#playback-button.active,
+#loop-button.active,
+#metronome-button.active {
+    color: white;
+}
+
+#record-button.active { background-color: #c0392b; animation: recording 1s ease-in-out infinite; }
+#playback-button.active { background-color: #1e8449; }
+#loop-button.active { background-color: #2471a3; }
+#metronome-button.active { background-color: #a0287f; }
+
+.control-button.active .icon {
+    color: inherit;
+}
+
+@keyframes recording {
+    50% { background-color: #e74c3c; }
+}
+
+/* Piano roll */
+#arrangement-view {
+    position: relative;
+    overflow: auto;
+    border: 1px solid rgba(128, 128, 128, 0.36);
+    border-radius: 5px;
+    background-color: #fff;
+    scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+}
+
+#arrangement-view::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+#arrangement-view::-webkit-scrollbar-track {
+    background: var(--sb-track-color);
+}
+
+#arrangement-view::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: var(--sb-thumb-color);
+}
+
+.arrangement-grid {
+    position: relative;
+    min-width: 100%;
+    /* one line per beat, follows the metronome tempo */
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+    background-size: var(--beat-width, 40px) 100%;
+    background-position: var(--label-width) 0;
+}
+
+.arrangement-row {
+    position: absolute;
+    right: 0;
+    left: 0;
+    height: var(--row-height);
+    border-bottom: 1px dashed rgba(64, 64, 64, 0.19);
+    box-sizing: border-box;
+}
+
+.arrangement-row.sharp {
+    background-color: rgba(0, 0, 0, 0.035);
+}
+
+.note-label {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--label-width);
+    height: 100%;
+    border-right: 1px solid #ccc;
+    background-color: #e0e0e0;
+    color: var(--muted-ink);
+    font-size: 10px;
+    box-sizing: border-box;
+}
+
+.arrangement-note {
+    position: absolute;
+    z-index: 2;
+    box-sizing: border-box;
+    height: calc(var(--row-height) - 2px);
+    margin-top: 1px;
+    padding: 0 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background-color: rgba(76, 175, 80, 0.85);
+    color: #0b3d0e;
+    font-size: 10px;
+    line-height: calc(var(--row-height) - 2px);
+    white-space: nowrap;
+    cursor: grab;
+    touch-action: none;
+}
+
+.arrangement-note:focus-visible {
+    outline-offset: 0;
+}
+
+.arrangement-note.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+}
+
+.arrangement-cursor {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 4;
+    width: 2px;
+    background-color: #e74c3c;
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform;
+}
+
+.is-following .arrangement-cursor {
+    opacity: 1;
+}
+
+.arrangement-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    color: #888;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.arrangement-empty[hidden] {
+    display: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    :root {
+        --white-key-width: 32px;
+        --black-key-width: 24px;
+    }
+}
+
+/* Phones in portrait: the panel is rotated so the keys run along the long side
+   (sizing done in util/rotated-panel.js; keep both queries in sync). */
+@media (max-width: 768px) and (orientation: portrait) {
+    :root {
+        --white-key-width: 40px;
+        --black-key-width: 30px;
+    }
+
+    .main-container {
+        padding-top: 24px;
+    }
+
+    .piano-stage {
+        position: relative;
+    }
+
+    .piano-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: max-content;
+        transform-origin: 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #record-button.active {
+        animation: none;
+    }
+}

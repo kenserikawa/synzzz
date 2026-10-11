@@ -1,201 +1,290 @@
+// Peak level of one voice. About 3 notes fit at full volume before the soft clipper bends the peaks.
+const VOICE_LEVEL = 0.3;
+
+// Square and sawtooth carry far more harmonic energy than sine: trim them to similar loudness.
+const WAVE_LEVEL = { sine: 1, triangle: 1, sawtooth: 0.85, square: 0.6 };
+
+// Soft clipper: linear up to CLIP_KNEE, then bends smoothly towards ±1 for inputs up to ±CLIP_RANGE.
+// Unlike DynamicsCompressorNode (~6 ms look-ahead in Chrome) it adds no latency.
+const CLIP_KNEE = 0.6;
+const CLIP_RANGE = 4;
+
+const PARAM_SMOOTHING = 0.02;   // seconds (time constant) for knob changes, avoids zipper noise
+const REVERB_REBUILD_DELAY = 150; // ms to wait for the fader to settle before rebuilding the impulse
+
+/*
+ * Signal flow (built once, voices plug into `input`):
+ *
+ *   voice → input ─┬─ chorusDry ──────────────────────┐
+ *                  └─ chorus L/R (LFO-modulated) ─ chorusWet ─┴→ fxBus
+ *   fxBus ─┬────────────────────────────────────────────→ master
+ *          ├─ delaySend → delay ⇄ (tone → feedback) → delayReturn → master
+ *          └─ reverbSend → convolver → reverbReturn ─────→ master
+ *   master → soft clipper → analyser → destination
+ */
 export default class Synth {
     constructor(audioContext) {
         this.audioContext = audioContext;
-        this.oscillator = null; 
-        this.gainNode = null; 
-        this.delayNode = null;
-        this.reverbNode = null;
-        this.chorusNode = null;
-        this.lfo = null;
-        this.analyser = audioContext.createAnalyser();
-        this.eqAnalyser = audioContext.createAnalyser();
+        this.waveType = 'sine';
+        this.envelope = { attack: 0.01, decay: 0.25, sustain: 0.7, release: 0.35 };
+        this.liveVoices = new Map();      // note → voice held by a key or pointer
+        this.scheduledVoices = new Set(); // one-shots scheduled by arrangement playback
+        this.volume = 0.8;
+        this.muted = false;
+        this.reverbSeconds = 2;
+        this.reverbTimer = null;
 
-        this.currentWaveType = 'sine';
-        this.currentDelayTime = 0.3;
-        this.currentReverbTime = 1;
-        this.currentChorusTime = 0.2;
-
-        this.attackTime = 0;
-        this.decayTime = 1;
-        this.sustainLevel = 1;
-        this.releaseTime = 1;
-
-        this.eqAnalyser.fftSize = 256;
-
-        this.connectSource = function(source) {
-            source.connect(this.analyser);
-            source.connect(this.eqAnalyser);
-        }
+        this.buildGraph();
     }
 
-    playNote(frequency) {
-        this.oscillator = this.audioContext.createOscillator();
-        this.gainNode = this.audioContext.createGain();
-        const rampValue = 0.001;
+    buildGraph() {
+        const ctx = this.audioContext;
+        const gain = value => {
+            const node = ctx.createGain();
+            node.gain.value = value;
+            return node;
+        };
 
-        this.oscillator.type = this.currentWaveType;
-        this.oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+        this.input = gain(1);
+        this.fxBus = gain(1);
+        this.master = gain(this.volume ** 2);
+        this.clipper = this.createSoftClipper();
+        this.analyser = ctx.createAnalyser();
+        this.analyser.fftSize = 2048;
 
-        this.gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
-        this.gainNode.gain.exponentialRampToValueAtTime(rampValue, this.audioContext.currentTime + 1);
-        this.gainNode.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.attackTime);
-        this.gainNode.gain.exponentialRampToValueAtTime(this.sustainLevel, this.audioContext.currentTime + this.attackTime + this.decayTime);
+        // Chorus: two short delay lines swept in opposite directions and panned apart.
+        this.chorusDry = gain(1);
+        this.chorusWet = gain(0);
+        this.chorusLfo = ctx.createOscillator();
+        this.chorusLfo.frequency.value = 0.8;
+        this.chorusDepth = [gain(0.003), gain(-0.003)];
+        [[0.018, -0.7], [0.024, 0.7]].forEach(([baseDelay, pan], side) => {
+            const line = ctx.createDelay(0.1);
+            const panner = ctx.createStereoPanner();
+            line.delayTime.value = baseDelay;
+            panner.pan.value = pan;
+            this.chorusLfo.connect(this.chorusDepth[side]).connect(line.delayTime);
+            this.input.connect(line).connect(panner).connect(this.chorusWet);
+        });
+        this.chorusLfo.start();
+        this.input.connect(this.chorusDry).connect(this.fxBus);
+        this.chorusWet.connect(this.fxBus);
 
-        this.oscillator.connect(this.analyser);
-        this.oscillator.connect(this.gainNode);
+        // Delay: send/return with a low-passed feedback loop so repeats get darker.
+        this.delaySend = gain(0);
+        this.delay = ctx.createDelay(2);
+        this.delay.delayTime.value = 0.3;
+        this.delayTone = ctx.createBiquadFilter();
+        this.delayTone.type = 'lowpass';
+        this.delayTone.frequency.value = 3200;
+        this.delayFeedback = gain(0.35);
+        this.delayReturn = gain(0.6);
+        this.fxBus.connect(this.delaySend).connect(this.delay).connect(this.delayTone);
+        this.delayTone.connect(this.delayFeedback).connect(this.delay);
+        this.delayTone.connect(this.delayReturn).connect(this.master);
 
-        let currentNode = this.gainNode;
+        // Reverb: send/return around a convolver with a generated impulse response.
+        this.reverbSend = gain(0);
+        this.reverbReturn = gain(0.5);
+        this.fxBus.connect(this.reverbSend);
+        this.reverbReturn.connect(this.master);
+        this.convolver = null;
+        this.rebuildReverb();
 
-        if (this.chorusNode) {
-            currentNode.connect(this.chorusNode);
-            currentNode = this.chorusNode;
+        this.fxBus.connect(this.master);
+        this.master.connect(this.clipper.input);
+        this.clipper.output.connect(this.analyser).connect(ctx.destination);
+    }
+
+    createSoftClipper() {
+        const ctx = this.audioContext;
+        const scale = ctx.createGain();      // the shaper reads [-1, 1]: squeeze ±CLIP_RANGE into it
+        const shaper = ctx.createWaveShaper();
+        const size = 8192;
+        const curve = new Float32Array(size);
+        for (let i = 0; i < size; i++) {
+            const x = ((i / (size - 1)) * 2 - 1) * CLIP_RANGE;
+            const magnitude = Math.abs(x);
+            const y = magnitude <= CLIP_KNEE
+                ? magnitude
+                : CLIP_KNEE + (1 - CLIP_KNEE) * Math.tanh((magnitude - CLIP_KNEE) / (1 - CLIP_KNEE));
+            curve[i] = Math.sign(x) * y;
         }
+        scale.gain.value = 1 / CLIP_RANGE;
+        shaper.curve = curve;
+        // No oversampling: '2x' would add ~2.7 ms of latency, and aliasing only appears while clipping.
+        scale.connect(shaper);
+        // Expose a node-like pair: connect into `scale`, out of `shaper`.
+        return { input: scale, output: shaper };
+    }
 
-        if (this.delayNode) {
-            currentNode.connect(this.delayNode);
-            currentNode = this.delayNode;
+    smooth(param, value) {
+        param.setTargetAtTime(value, this.audioContext.currentTime, PARAM_SMOOTHING);
+    }
+
+    // ── Voices ────────────────────────────────────────────────────────────────
+
+    createVoice(frequency, when) {
+        const ctx = this.audioContext;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        const peak = VOICE_LEVEL * (WAVE_LEVEL[this.waveType] ?? 1);
+        const { attack, decay, sustain } = this.envelope;
+
+        osc.type = this.waveType;
+        osc.frequency.value = frequency;
+        amp.gain.value = 0;
+        amp.gain.setValueAtTime(0, when);
+        amp.gain.linearRampToValueAtTime(peak, when + attack);
+        amp.gain.setTargetAtTime(peak * sustain, when + attack, decay / 3);
+
+        osc.connect(amp).connect(this.input);
+        osc.start(when);
+
+        const voice = { osc, amp, startTime: when };
+        osc.onended = () => {
+            osc.disconnect();
+            amp.disconnect();
+            this.scheduledVoices.delete(voice);
+        };
+        return voice;
+    }
+
+    // Release a voice that is sounding now (key up, stop button).
+    releaseVoice(voice, when = this.audioContext.currentTime) {
+        const gain = voice.amp.gain;
+        const { release } = this.envelope;
+
+        if (voice.startTime > when) {
+            // Scheduled but not started yet: never let it sound.
+            voice.osc.stop(when);
+            voice.amp.disconnect();
+            return;
         }
-
-        if (this.reverbNode) {
-            currentNode.connect(this.reverbNode);
-            this.reverbNode.connect(this.audioContext.destination);
+        if (gain.cancelAndHoldAtTime) {
+            gain.cancelAndHoldAtTime(when);
         } else {
-            currentNode.connect(this.audioContext.destination);
+            const current = gain.value;
+            gain.cancelScheduledValues(when);
+            gain.setValueAtTime(current, when);
         }
-
-        this.oscillator.start();
-        this.oscillator.stop(this.audioContext.currentTime + 1);
-        this.oscillator.stop(this.audioContext.currentTime + this.attackTime + this.decayTime + this.releaseTime);
-
-        this.gainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
-        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.audioContext.currentTime);
-        this.gainNode.gain.exponentialRampToValueAtTime(rampValue, this.audioContext.currentTime + this.releaseTime);
+        gain.setTargetAtTime(0, when, release / 5);
+        voice.osc.stop(when + release);
     }
 
-    stopNote() {
-        if (this.oscillator && this.gainNode) {
-            const now = this.audioContext.currentTime;
-            const release = now + this.releaseTime;
-    
-            this.gainNode.gain.cancelScheduledValues(now);
-    
-            const currentGain = this.gainNode.gain.value;
-    
-            this.gainNode.gain.setValueAtTime(currentGain, now);
-            this.gainNode.gain.exponentialRampToValueAtTime(0.001, release);
-            this.oscillator.stop(release);
-
-            setTimeout(() => {
-                if (this.oscillator) {
-                    this.oscillator.disconnect();
-                    this.oscillator = null;
-                }
-                if (this.gainNode) {
-                    this.gainNode.disconnect();
-                    this.gainNode = null;
-                }
-            }, this.releaseTime * 1000);
-        }
+    noteOn(note, frequency) {
+        this.noteOff(note); // retrigger: release the previous voice of this note
+        this.liveVoices.set(note, this.createVoice(frequency, this.audioContext.currentTime));
     }
-    
+
+    noteOff(note) {
+        const voice = this.liveVoices.get(note);
+        if (!voice) return;
+        this.liveVoices.delete(note);
+        this.releaseVoice(voice);
+    }
+
+    // Fire-and-forget note with a known length, sample-accurate at `when` (audio clock).
+    playNote(frequency, when, duration) {
+        const voice = this.createVoice(frequency, when);
+        const { attack, release } = this.envelope;
+        const end = when + Math.max(duration, attack + 0.02);
+
+        voice.amp.gain.setTargetAtTime(0, end, release / 5);
+        voice.osc.stop(end + release);
+        this.scheduledVoices.add(voice);
+    }
+
+    stopScheduled() {
+        const now = this.audioContext.currentTime;
+        this.scheduledVoices.forEach(voice => this.releaseVoice(voice, now));
+        this.scheduledVoices.clear();
+    }
+
     setWaveType(type) {
-        this.currentWaveType = type;
+        this.waveType = type;
     }
 
-    setDelayTime(time) {
-        this.currentDelayTime = time;
-        if (this.delayNode) {
-            this.delayNode.delayTime.value = this.currentDelayTime;
-        }
+    // ── Output ────────────────────────────────────────────────────────────────
+
+    setVolume(volume) {
+        this.volume = volume;
+        this.applyMasterGain();
     }
 
-    setReverbTime(time) {
-        this.currentReverbTime = time;
-        this.createReverbNode();
+    setMuted(muted) {
+        this.muted = muted;
+        this.applyMasterGain();
     }
 
-    setChorusTime(time) {
-        this.currentChorusTime = time;
-        this.createChorusNode();
+    applyMasterGain() {
+        // Squared so the fader feels closer to perceived loudness.
+        this.smooth(this.master.gain, this.muted ? 0 : this.volume ** 2);
+    }
+
+    // ── Effects ───────────────────────────────────────────────────────────────
+
+    enableChorus(enabled) {
+        this.smooth(this.chorusWet.gain, enabled ? 0.6 : 0);
     }
 
     enableDelay(enabled) {
-        if (enabled && !this.delayNode) {
-            this.createDelayNode();
-        } else if (!enabled && this.delayNode) {
-            this.delayNode.disconnect();
-            this.delayNode = null;
-        }
+        this.smooth(this.delaySend.gain, enabled ? 1 : 0);
     }
 
     enableReverb(enabled) {
-        if (enabled && !this.reverbNode) {
-            this.createReverbNode();
-        } else if (!enabled && this.reverbNode) {
-            this.reverbNode.disconnect();
-            this.reverbNode = null;
+        this.smooth(this.reverbSend.gain, enabled ? 1 : 0);
+    }
+
+    // amount 0…1 → deeper and faster sweep
+    setChorusAmount(amount) {
+        const depth = 0.001 + amount * 0.005;
+        this.smooth(this.chorusDepth[0].gain, depth);
+        this.smooth(this.chorusDepth[1].gain, -depth);
+        this.smooth(this.chorusLfo.frequency, 0.2 + amount * 1.3);
+    }
+
+    setDelayTime(seconds) {
+        this.smooth(this.delay.delayTime, seconds);
+    }
+
+    setReverbTime(seconds) {
+        if (seconds === this.reverbSeconds) return;
+        this.reverbSeconds = seconds;
+        clearTimeout(this.reverbTimer);
+        this.reverbTimer = setTimeout(() => this.rebuildReverb(), REVERB_REBUILD_DELAY);
+    }
+
+    rebuildReverb() {
+        const next = this.audioContext.createConvolver();
+        next.buffer = this.createImpulse(this.reverbSeconds);
+        next.connect(this.reverbReturn);
+        this.reverbSend.connect(next);
+
+        const previous = this.convolver;
+        if (previous) {
+            // Stop feeding the old room but let its tail ring out before dropping it.
+            this.reverbSend.disconnect(previous);
+            setTimeout(() => previous.disconnect(), previous.buffer.duration * 1000);
         }
+        this.convolver = next;
     }
 
-    enableChorus(enabled) {
-        if (enabled && !this.chorusNode) {
-            this.createChorusNode();
-        } else if (!enabled && this.chorusNode) {
-            this.chorusNode.disconnect();
-            this.chorusNode = null;
-            if (this.lfo) {
-                this.lfo.stop();
-                this.lfo.disconnect();
-                this.lfo = null;
-            }
-        }
-    }
+    // Stereo noise with an exponential decay that reaches -60 dB at `seconds` (RT60).
+    createImpulse(seconds) {
+        const rate = this.audioContext.sampleRate;
+        const length = Math.max(1, Math.floor(rate * seconds));
+        const impulse = this.audioContext.createBuffer(2, length, rate);
+        const step = Math.exp(-6.9 / length);
 
-    createChorusNode() {
-        this.chorusNode = this.audioContext.createDelay();
-        this.chorusNode.delayTime.value = this.currentChorusTime; 
-
-        this.lfo = this.audioContext.createOscillator();
-        this.lfo.type = 'sine';
-        this.lfo.frequency.value = 1;
-
-        const lfoGain = this.audioContext.createGain();
-        lfoGain.gain.value = 0.32;
-
-        this.lfo.connect(lfoGain);
-        lfoGain.connect(this.chorusNode.delayTime);
-        this.lfo.start();
-
-        return this.chorusNode;
-    }
-
-    createDelayNode() {
-        this.delayNode = this.audioContext.createDelay(5.0);
-        this.delayNode.delayTime.value = this.currentDelayTime; 
-
-        const feedbackNode = this.audioContext.createGain();
-        feedbackNode.gain.value = 0.4;
-
-        this.delayNode.connect(feedbackNode);
-        feedbackNode.connect(this.delayNode);
-
-        return this.delayNode;
-    }
-
-    async createReverbNode() {
-        this.reverbNode = this.audioContext.createConvolver();
-
-        const sampleRate = this.audioContext.sampleRate;
-        const length = sampleRate * this.currentReverbTime;
-        const impulseBuffer = this.audioContext.createBuffer(2, length, sampleRate);
-        for (let channel = 0; channel < impulseBuffer.numberOfChannels; channel++) {
-            const channelData = impulseBuffer.getChannelData(channel);
+        for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+            const data = impulse.getChannelData(channel);
+            let envelope = 1;
             for (let i = 0; i < length; i++) {
-                channelData[i] = (Math.random() * 2 - 1) * (1 - i / length);
+                data[i] = (Math.random() * 2 - 1) * envelope;
+                envelope *= step;
             }
         }
-
-        this.reverbNode.buffer = impulseBuffer;
-        return this.reverbNode;
+        return impulse;
     }
 }

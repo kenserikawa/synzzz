@@ -1,111 +1,120 @@
+const TICK_MS = 25;
+const LOOKAHEAD = 0.1;
+const HIDDEN_LOOKAHEAD = 1.5;
+const MIN_BPM = 40;
+const MAX_BPM = 240;
+const BEATS_PER_BAR = 4;
+const TAP_RESET_MS = 2000;
+
+// Click track scheduled on the audio clock (same lookahead pattern as Arrangement),
+// with an accented downbeat and tap tempo.
 export default class Metronome {
-    constructor(audioContext, bpmDisplay, tapButton, metronomeButton) {
+    constructor(audioContext, { bpmDisplay, tapButton, metronomeButton, onBpmChange = () => {} }) {
         this.audioContext = audioContext;
         this.bpmDisplay = bpmDisplay;
         this.tapButton = tapButton;
-        this.metronomeButton = metronomeButton
-        this.taps = [];
-        this.lastTapTime = 0;
-        this.isMetronomeOn = false;
-        this.metronomeInterval = null;
+        this.metronomeButton = metronomeButton;
+        this.onBpmChange = onBpmChange;
         this.beatsPerMinute = 120;
-        this.secondsPerBeat = 60 / this.beatsPerMinute;
-        this.pixelsPerSecond = 50;
+        this.taps = [];
+        this.timer = null;
+        this.nextBeatTime = 0;
+        this.beat = 0;
 
-        this.oscillator = null
-        this.gainNode = null;
+        this.output = audioContext.createGain();
+        this.output.gain.value = 0.35;
+        this.output.connect(audioContext.destination);
 
-        this.setupEventListeners(); 
+        this.tapButton.addEventListener('click', () => this.tap());
+        this.metronomeButton.addEventListener('click', () => this.toggle());
+        this.updateDisplay();
     }
 
-    setupEventListeners() {
-
-        this.tapButton.addEventListener('click', () => this.calculateBPM());
-
-        this.metronomeButton.addEventListener('click', () => {
-            this.toggleMetronome();
-        });
+    get isOn() {
+        return this.timer !== null;
     }
 
-    calculateBPM() {
-        const now = Date.now();
-        if (now - this.lastTapTime > 2000) {
-            this.taps = [];
-        }
-        this.taps.push(now);
-        this.lastTapTime = now;
+    tap() {
+        const now = performance.now();
+        if (now - (this.taps.at(-1) ?? 0) > TAP_RESET_MS) this.taps = [];
+        this.taps = [...this.taps, now].slice(-4);
+        if (this.taps.length < 2) return;
 
-        if (this.taps.length > 4) {
-            this.taps = this.taps.slice(-4);
-        }
-
-        if (this.taps.length > 1) {
-            const intervals = [];
-            for (let i = 1; i < this.taps.length; i++) {
-                intervals.push(this.taps[i] - this.taps[i - 1]);
-            }
-            const averageInterval = intervals.reduce((a, b) => a + b) / intervals.length;
-            this.beatsPerMinute = Math.round(60000 / averageInterval);
-            this.updateBPMDisplay();
-        }
+        const averageInterval = (this.taps.at(-1) - this.taps[0]) / (this.taps.length - 1);
+        this.setBPM(60000 / averageInterval);
     }
 
-    updateBPMDisplay() {
-        this.bpmDisplay.textContent = `${this.beatsPerMinute} BPM`;
-    }
-
-    toggleMetronome() {
-        this.isMetronomeOn = !this.isMetronomeOn;
-        if (this.isMetronomeOn) {
-            this.startMetronome();
-        } else {
-            this.stopMetronome();
-        }
-    }
-
-    startMetronome() {
-        if (this.metronomeInterval) {
-            clearInterval(this.metronomeInterval);
-        }
-
-        this.metronomeInterval = setInterval(() => {
-            this.playTick();
-        }, 60000 / this.beatsPerMinute);
-        this.playTick()
-    }
-
-    stopMetronome() {
-        clearInterval(this.metronomeInterval);
-        this.metronomeInterval = null;
-    }
-
-    playTick() {
-        this.oscillator = this.audioContext.createOscillator();
-        this.gainNode = this.audioContext.createGain();
-
-        this.oscillator.type = 'sine'; 
-        this.oscillator.frequency.setValueAtTime(1000, this.audioContext.currentTime); 
-
-        this.gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);  
-        this.gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.1);
-
-        this.oscillator.connect(this.gainNode);
-        this.gainNode.connect(this.audioContext.destination);
-
-        this.oscillator.start();
-        this.oscillator.stop(this.audioContext.currentTime + 0.1); 
+    setBPM(bpm) {
+        this.beatsPerMinute = Math.round(Math.min(MAX_BPM, Math.max(MIN_BPM, bpm)));
+        this.updateDisplay();
+        this.onBpmChange(this.beatsPerMinute);
+        // A running metronome picks up the new tempo on its next beat.
     }
 
     getBPM() {
         return this.beatsPerMinute;
     }
 
-    setBPM(bpm) {
-        this.beatsPerMinute = bpm;
-        this.updateBPMDisplay();
-        if (this.isMetronomeOn) {
-            this.stopMetronome();
-            this.startMetronome();
+    updateDisplay() {
+        this.bpmDisplay.textContent = `${this.beatsPerMinute} BPM`;
+    }
+
+    toggle() {
+        if (this.isOn) this.stop();
+        else this.start();
+        this.metronomeButton.classList.toggle('active', this.isOn);
+        this.metronomeButton.setAttribute('aria-pressed', String(this.isOn));
+    }
+
+    start() {
+        this.beat = 0;
+        this.nextBeatTime = this.audioContext.currentTime + 0.05;
+        this.timer = setInterval(() => this.schedule(), TICK_MS);
+        this.schedule();
+    }
+
+    stop() {
+        clearInterval(this.timer);
+        this.timer = null;
+    }
+
+    schedule() {
+        const now = this.audioContext.currentTime;
+        const horizon = now + (document.hidden ? HIDDEN_LOOKAHEAD : LOOKAHEAD);
+        // After a long stall (suspended context, sleeping tab) skip ahead instead of bursting clicks.
+        if (this.nextBeatTime < now - 0.2) this.nextBeatTime = now + 0.05;
+
+        while (this.nextBeatTime < horizon) {
+            const accent = this.beat % BEATS_PER_BAR === 0;
+            this.playTick(this.nextBeatTime, accent);
+            this.flash(this.nextBeatTime, accent);
+            this.nextBeatTime += 60 / this.beatsPerMinute;
+            this.beat++;
         }
+    }
+
+    playTick(when, accent) {
+        const oscillator = this.audioContext.createOscillator();
+        const envelope = this.audioContext.createGain();
+
+        oscillator.frequency.value = accent ? 1500 : 1000;
+        envelope.gain.setValueAtTime(1, when);
+        envelope.gain.exponentialRampToValueAtTime(0.001, when + 0.05);
+
+        oscillator.connect(envelope).connect(this.output);
+        oscillator.start(when);
+        oscillator.stop(when + 0.06);
+        oscillator.onended = () => envelope.disconnect();
+    }
+
+    // Visual beat, timed to when the click is actually heard.
+    flash(when, accent) {
+        const delay = Math.max(0, (when - this.audioContext.currentTime) * 1000);
+        setTimeout(() => {
+            this.bpmDisplay.animate(
+                [{ color: accent ? 'rgb(252, 50, 196)' : '#888' }, {}],
+                { duration: 180, easing: 'ease-out' }
+            );
+        }, delay);
     }
 }

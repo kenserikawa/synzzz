@@ -3,145 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Synzzz: a small synthesizer with effects, metronome and a piano-roll recorder that runs in the browser.">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <title>👾 Synzzz</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script defer src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" type="text/css">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="app.js"></script>
 </head>
 <body>
-    <div class="navbar pixel-font">👾 SYNZZZ 👾</div>
+    <header class="navbar pixel-font">👾 SYNZZZ 👾</header>
 
+    <main class="main-container">
+        <div class="piano-stage">
+            <section class="piano-container" aria-label="Synthesizer">
+                <div class="control-panel">
+                    <div class="effect-module">
+                        <label class="synth-button volume">
+                            <input type="checkbox" id="volume-toggle" checked aria-label="Sound on">
+                            <span class="button-face volume"></span>
+                        </label>
+                        <input id="volume-fader" type="range" orient="vertical" min="0" max="100" value="80" aria-label="Volume">
+                        <span class="module-label pixel-font" aria-hidden="true">VOL</span>
+                    </div>
 
-    <div class="main-container">
-
-        <div id="landscape-warning" style="display:none;">
-        Please rotate your device back to portrait mode for the best experience!
-        </div>
-
-        <div class="piano-container">
-            <div class="wave-selector">
-                <div class="effect-module">
-                    <label class="vollume synth-button">
-                        <input type="checkbox" id="volume-toggle"> 
-                        <span class="vollume button-face"></span>
-                    </label>
-                    <input id="volume-fader" type="range" min="0" max="100" orient="horizontal">
-                </div>
-                <div class="wave-modules">
-                    <div class="wave-selector">
-                        <button class="nav-button left">◀</button>
-                        <div class="display">
-                          <span class="wave-icon">∿</span>
+                    <div class="wave-nav" role="group" aria-label="Waveform">
+                        <button class="nav-button left" aria-label="Previous waveform">◀</button>
+                        <div class="display" aria-live="polite">
+                            <span class="wave-icon" aria-hidden="true">∿</span>
+                            <span class="wave-name pixel-font">Sine</span>
                         </div>
-                        <button class="nav-button right">▶</button>
+                        <button class="nav-button right" aria-label="Next waveform">▶</button>
                     </div>
-                </div>
-                <div class="effect-module">
-                    <label class="delay synth-button">
-                        <input type="checkbox" id="delay-toggle"> 
-                        <span class="delay button-face"></span>
-                    </label>
-                    <input id="delay-fader" type="range" min="10" max="90" orient="vertical">
-                </div>
-                <div class="effect-module">
-                    <label class="reverb synth-button">
-                        <input type="checkbox" id="reverb-toggle"> 
-                        <span class="reverb button-face"></span>
-                    </label>
-                    <input id="reverb-fader" type="range" min="1" max="9" orient="vertical">
-                </div>
-                <div class="effect-module">
-                    <label class="chorus synth-button">
-                        <input type="checkbox" id="chorus-toggle"> 
-                        <span class="chorus button-face"></span>
-                    </label>
-                    <input id="chorus-fader" type="range" min="10" max="90" orient="vertical">
-                </div>
-                <div class="audio-visuals">
-                    <div class="oscillator-wave-viewer">
-                        <canvas id="waveformCanvas" width="100" height="50"></canvas>
-                        <code class="canvas-label pixel-font">OSC</code>
-                    </div>
-                    <div class="oscillator-wave-viewer">
-                        <canvas id="eqCanvas" width="100" height="50"></canvas>
-                        <code class="canvas-label pixel-font">EQ</code>
-                    </div>
-                </div>
-            </div>
-      
-            <div class="piano">
-                <div class="key" data-note="C"></div>
-                <div class="key black" data-note="C#"></div>
-                <div class="key" data-note="D"></div>
-                <div class="key black" data-note="D#"></div>
-                <div class="key" data-note="E"></div>
-                <div class="key" data-note="F"></div>
-                <div class="key black" data-note="F#"></div>
-                <div class="key" data-note="G"></div>
-                <div class="key black" data-note="G#"></div>
-                <div class="key" data-note="A"></div>
-                <div class="key black" data-note="A#"></div>
-                <div class="key" data-note="B"></div> 
-       
-                <div class="key white-corner-border" data-note="C1"></div>
-                <div class="key black black-corner-border" data-note="C#1"></div>
-                <div class="key white-corner-border" data-note="D1"></div>
-                <div class="key black black-corner-border" data-note="D#1"></div>
-                <div class="key white-corner-border" data-note="E1"></div>
-                <div class="key white-corner-border" data-note="F1"></div>
-                <div class="key black black-corner-border" data-note="F#1"></div>
-                <div class="key white-corner-border" data-note="G1"></div>
-                <div class="key black black-corner-border" data-note="G#1"></div>
-                <div class="key white-corner-border" data-note="A1"></div>
-                <div class="key black black-corner-border" data-note="A#1"></div>
-                <div class="key white-corner-border" data-note="B1"></div>
-                <!--    
-                <div class="key white-corner-border" data-note="C2"></div>
-                <div class="key black black-corner-border" data-note="C#2"></div>
-                <div class="key white-corner-border" data-note="D2"></div>
-                <div class="key black black-corner-border" data-note="D#2"></div>
-                <div class="key white-corner-border" data-note="E2"></div>  
-                # Highest notes        
-                <div class="key" data-note="F2"></div>
-                <div class="key black" data-note="F#2"></div>
-                <div class="key" data-note="G2"></div>
-                <div class="key black" data-note="G#2"></div>
-                <div class="key" data-note="A2"></div>
-                <div class="key black" data-note="A#2"></div>
-                <div class="key" data-note="B2"></div> 
-                -->
-            </div>
-        </div>
-    <div id="action-log"></div>
-        
-    
-    <div class="record-ui">
-        <div class="controls pixel-font">
-            <div id="bpm-display">120 BPM</div>
-            <div class="button-container">
-                <button id="tap-button" class="control-button">
-                    <span>Tap Tempo</span>
-                </button>
-                <button id="metronome-button" class="control-button">
-                    <span>Metronome</span>
-                </button>
-            </div>
-        </div>
-        <div class="button-container">
-            <button id="record-button" class="control-button">🔴</button>
-            <button id="playback-button" class="control-button">🔂</button>
-            <button id="loop-button" class="control-button">🔁</button>
-        </div>
-        <div id="arrangement-view">
-            <div id="cursor-line"></div>
-        </div>
-    </div>
 
-</div>
-<script  type="module" src="app.js"></script>
+                    <div class="effect-module">
+                        <label class="synth-button delay">
+                            <input type="checkbox" id="delay-toggle" aria-label="Delay on">
+                            <span class="button-face delay"></span>
+                        </label>
+                        <input id="delay-fader" type="range" orient="vertical" min="10" max="90" value="30" aria-label="Delay time">
+                        <span class="module-label pixel-font" aria-hidden="true">DLY</span>
+                    </div>
+                    <div class="effect-module">
+                        <label class="synth-button reverb">
+                            <input type="checkbox" id="reverb-toggle" aria-label="Reverb on">
+                            <span class="button-face reverb"></span>
+                        </label>
+                        <input id="reverb-fader" type="range" orient="vertical" min="1" max="9" value="2" aria-label="Reverb length">
+                        <span class="module-label pixel-font" aria-hidden="true">REV</span>
+                    </div>
+                    <div class="effect-module">
+                        <label class="synth-button chorus">
+                            <input type="checkbox" id="chorus-toggle" aria-label="Chorus on">
+                            <span class="button-face chorus"></span>
+                        </label>
+                        <input id="chorus-fader" type="range" orient="vertical" min="10" max="90" value="50" aria-label="Chorus depth">
+                        <span class="module-label pixel-font" aria-hidden="true">CHO</span>
+                    </div>
 
+                    <div class="audio-visuals" aria-hidden="true">
+                        <div class="oscillator-wave-viewer">
+                            <canvas id="waveformCanvas" width="100" height="50"></canvas>
+                            <code class="canvas-label pixel-font">OSC</code>
+                        </div>
+                        <div class="oscillator-wave-viewer">
+                            <canvas id="eqCanvas" width="100" height="50"></canvas>
+                            <code class="canvas-label pixel-font">EQ</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="piano" role="group" aria-label="Piano keyboard. Play with keys Z to M and Q to U; black keys on S D G H J and 2 3 5 6 7.">
+                    <div class="key" data-note="C3"></div>
+                    <div class="key black" data-note="C#3"></div>
+                    <div class="key" data-note="D3"></div>
+                    <div class="key black" data-note="D#3"></div>
+                    <div class="key" data-note="E3"></div>
+                    <div class="key" data-note="F3"></div>
+                    <div class="key black" data-note="F#3"></div>
+                    <div class="key" data-note="G3"></div>
+                    <div class="key black" data-note="G#3"></div>
+                    <div class="key" data-note="A3"></div>
+                    <div class="key black" data-note="A#3"></div>
+                    <div class="key" data-note="B3"></div>
+
+                    <div class="key white-corner-border" data-note="C4"></div>
+                    <div class="key black black-corner-border" data-note="C#4"></div>
+                    <div class="key white-corner-border" data-note="D4"></div>
+                    <div class="key black black-corner-border" data-note="D#4"></div>
+                    <div class="key white-corner-border" data-note="E4"></div>
+                    <div class="key white-corner-border" data-note="F4"></div>
+                    <div class="key black black-corner-border" data-note="F#4"></div>
+                    <div class="key white-corner-border" data-note="G4"></div>
+                    <div class="key black black-corner-border" data-note="G#4"></div>
+                    <div class="key white-corner-border" data-note="A4"></div>
+                    <div class="key black black-corner-border" data-note="A#4"></div>
+                    <div class="key white-corner-border" data-note="B4"></div>
+                    <!-- Third octave (frequencies already defined in util/note-frequencies.js):
+                    <div class="key white-corner-border" data-note="C5"></div>
+                    <div class="key black black-corner-border" data-note="C#5"></div>
+                    <div class="key white-corner-border" data-note="D5"></div>
+                    <div class="key black black-corner-border" data-note="D#5"></div>
+                    <div class="key white-corner-border" data-note="E5"></div>
+                    -->
+                </div>
+            </section>
+        </div>
+
+        <section class="record-ui" aria-label="Recorder">
+            <div class="transport">
+                <div id="bpm-display" class="pixel-font" aria-live="polite">120 BPM</div>
+                <div class="button-container">
+                    <button id="tap-button" class="control-button pixel-font">Tap tempo</button>
+                    <button id="metronome-button" class="control-button pixel-font" aria-pressed="false">Metronome</button>
+                </div>
+                <div class="button-container">
+                    <button id="record-button" class="control-button pixel-font" aria-pressed="false">
+                        <span class="icon" aria-hidden="true">●</span> <span class="label">Rec</span>
+                    </button>
+                    <button id="playback-button" class="control-button pixel-font" aria-pressed="false" disabled>
+                        <span class="icon" aria-hidden="true">▶</span> <span class="label">Play</span>
+                    </button>
+                    <button id="loop-button" class="control-button pixel-font" aria-pressed="false">
+                        <span class="icon" aria-hidden="true">↻</span> <span class="label">Loop</span>
+                    </button>
+                </div>
+            </div>
+            <div id="arrangement-view" aria-label="Recorded notes"></div>
+        </section>
+    </main>
 </body>
 </html>

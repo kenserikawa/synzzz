@@ -1,122 +1,133 @@
-export default class Keyboard {
-    constructor(synth, noteFrequencies, keys) {
-        this.synth = synth;
-        this.noteFrequencies = noteFrequencies; 
-        this.keys = keys; 
-        this.isMouseDown = false;
-        this.triggeredKeys = new Set();
+import { keyBindings, keyLabel } from "../util/key-bindings.js";
 
-        this.attachEventListeners(); 
+// Turns pointer (mouse, touch, pen) and computer-keyboard input into note on/off events.
+// A note can be held by several sources at once (two fingers, a finger and a key):
+// it only starts on the first hold and stops on the last release.
+export default class Keyboard {
+    constructor(pianoElement, { onNoteOn, onNoteOff }) {
+        this.piano = pianoElement;
+        this.onNoteOn = onNoteOn;
+        this.onNoteOff = onNoteOff;
+        this.keyElements = new Map(
+            [...pianoElement.querySelectorAll('.key')].map(key => [key.dataset.note, key])
+        );
+        this.holds = new Map();         // note → number of sources holding it
+        this.pointerNotes = new Map();  // pointerId → note under that pointer (null between keys)
+        this.pressedCodes = new Set();  // computer keys currently down
+
+        this.labelKeys();
+        this.attachPointerEvents();
+        this.attachKeyboardEvents();
     }
 
-    findKeyNote(key) {
-        switch (key.toLowerCase()) {
-            case 'z': return 'C';
-            case 'x': return 'D';
-            case 'c': return 'E';
-            case 'v': return 'F';
-            case 'b': return 'G';
-            case 'n': return 'A';
-            case 'm': return 'B';
-    
-            case 'q': return 'C1';
-            case 'w': return 'D1';
-            case 'e': return 'E1';
-            case 'r': return 'F1';
-            case 't': return 'G1';
-            case 'y': return 'A1';
-            case 'u': return 'B1';
-    
-            case 's': return 'C#';
-            case 'd': return 'D#';
-            case 'g': return 'F#';
-            case 'h': return 'G#';
-            case 'j': return 'A#';
-    
-            case '2': return 'C#1';
-            case '3': return 'D#1';
-            case '5': return 'F#1';
-            case '6': return 'G#1';
-            case '7': return 'A#1';
-    
-            default: return null;
+    // Bindings follow physical keys; print the user's own keycap when the browser can tell
+    // (Keyboard Map API, Chromium only), else the QWERTY letter.
+    async labelKeys() {
+        const setLabels = label => {
+            for (const [code, note] of Object.entries(keyBindings)) {
+                this.keyElements.get(note)?.setAttribute('data-shortcut', label(code));
+            }
+        };
+        setLabels(keyLabel);
+        try {
+            const layout = await navigator.keyboard?.getLayoutMap();
+            if (layout) setLabels(code => layout.get(code)?.toUpperCase() || keyLabel(code));
+        } catch {
+            // Not allowed here (e.g. inside an iframe): keep the QWERTY labels.
         }
-    }    
+    }
 
-    attachEventListeners() {
-        this.keys.forEach(key => {
-            const note = key.getAttribute('data-note');
+    press(note) {
+        const count = this.holds.get(note) ?? 0;
+        this.holds.set(note, count + 1);
+        if (count === 0) {
+            this.highlightKey(note);
+            this.onNoteOn(note);
+        }
+    }
 
-            key.addEventListener('mousedown', () => {
-                const frequency = this.noteFrequencies[note];
-                this.synth.playNote(frequency);
-                key.classList.add('active');
-            });
+    release(note) {
+        const count = this.holds.get(note) ?? 0;
+        if (count > 1) {
+            this.holds.set(note, count - 1);
+        } else if (count === 1) {
+            this.holds.delete(note);
+            this.unhighlightKey(note);
+            this.onNoteOff(note);
+        }
+    }
 
-            key.addEventListener('mouseup', () => {
-                key.classList.remove('active');
-            });
+    releaseAll() {
+        this.pointerNotes.clear();
+        this.pressedCodes.clear();
+        for (const note of this.holds.keys()) {
+            this.unhighlightKey(note);
+            this.onNoteOff(note);
+        }
+        this.holds.clear();
+    }
 
-            key.addEventListener('mouseleave', () => {
-                key.classList.remove('active');
-                this.synth.stopNote();
-            });
+    noteAt(x, y) {
+        return document.elementFromPoint(x, y)?.closest('.key')?.dataset.note ?? null;
+    }
 
-            key.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const frequency = this.noteFrequencies[note];
-                this.synth.playNote(frequency);
-                key.classList.add('active');
-            });
-
-            key.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                key.classList.remove('active');
-                this.synth.stopNote();
-            });
-
-            key.addEventListener('mousedown', () => {
-                this.isMouseDown = true;
-                this.triggeredKeys.clear(); 
-                if (!this.triggeredKeys.has(note)) {
-                    this.synth.playNote(this.noteFrequencies[note]);
-                    this.triggeredKeys.add(note);
-                    key.classList.add('active');
-                }
-            });
-
-            key.addEventListener('mouseenter', () => {
-                if (this.isMouseDown && !this.triggeredKeys.has(note)) {
-                    this.synth.playNote(this.noteFrequencies[note]);
-                    this.triggeredKeys.add(note);
-                    key.classList.add('active');
-                }
-            });
+    attachPointerEvents() {
+        this.piano.addEventListener('pointerdown', event => {
+            const note = event.target.closest('.key')?.dataset.note;
+            if (!note || event.button !== 0) return;
+            event.preventDefault();
+            // Keep receiving moves for this pointer so sliding across keys plays a glissando.
+            this.piano.setPointerCapture(event.pointerId);
+            this.pointerNotes.set(event.pointerId, note);
+            this.press(note);
         });
 
-        document.addEventListener('mouseup', () => {
-            this.isMouseDown = false;
-            this.triggeredKeys.clear(); 
+        this.piano.addEventListener('pointermove', event => {
+            if (!this.pointerNotes.has(event.pointerId)) return;
+            const previous = this.pointerNotes.get(event.pointerId);
+            const note = this.noteAt(event.clientX, event.clientY);
+            if (note === previous) return;
+            if (previous) this.release(previous);
+            this.pointerNotes.set(event.pointerId, note);
+            if (note) this.press(note);
         });
 
-        document.addEventListener('mousedown', () => {
-            this.isMouseDown = true;
-        });
+        const end = event => {
+            if (!this.pointerNotes.has(event.pointerId)) return;
+            const note = this.pointerNotes.get(event.pointerId);
+            this.pointerNotes.delete(event.pointerId);
+            if (note) this.release(note);
+        };
+        this.piano.addEventListener('pointerup', end);
+        this.piano.addEventListener('pointercancel', end);
+        this.piano.addEventListener('lostpointercapture', end);
+    }
+
+    attachKeyboardEvents() {
+        document.addEventListener('keydown', event => this.handleKeyDown(event));
+        document.addEventListener('keyup', event => this.handleKeyUp(event));
+        // A key released while the window is in the background never sends keyup.
+        window.addEventListener('blur', () => this.releaseAll());
     }
 
     handleKeyDown(event) {
-
+        const note = keyBindings[event.code];
+        if (!note || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+        if (this.pressedCodes.has(event.code)) return;
+        this.pressedCodes.add(event.code);
+        this.press(note);
     }
 
     handleKeyUp(event) {
-
+        if (!this.pressedCodes.delete(event.code)) return;
+        this.release(keyBindings[event.code]);
     }
 
     highlightKey(note) {
-
+        this.keyElements.get(note)?.classList.add('active');
     }
 
     unhighlightKey(note) {
-
+        this.keyElements.get(note)?.classList.remove('active');
     }
 }
