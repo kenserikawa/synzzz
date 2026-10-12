@@ -22,9 +22,10 @@ Synzzz: a browser synthesizer in vanilla JavaScript (ES modules, no framework, n
 - `component/keyboard.js` — Pointer Events on `.piano` (delegated, pointer capture + `elementFromPoint` for glissando) and `keydown/keyup` by `event.code`. Notes are refcounted (`holds`) so two sources holding one note release it once.
 - `component/recorder.js` — `{ note, time, duration }` in seconds from the start of the take, on `audioContext.currentTime`.
 - `component/arrangement.js` and `component/metronome.js` — lookahead schedulers: a 25 ms `setInterval` schedules audio up to 100 ms ahead (1.5 s when `document.hidden`). Never play notes from `setTimeout` at their musical time.
-- `component/arrangement-view.js` — piano roll. Rows and cursor are created once; `render()` only rebuilds the note layer. Notes keep `data-index` = index in `arrangement.notes`.
+- `component/arrangement-view.js` — piano roll. Rows and cursor are created once; `render()` only rebuilds the note layer. Notes keep `data-index` = index in `arrangement.notes`. Edits go through `arrangement.updateNote(i, { time, note })` / `removeNote(i)`, which fire `arrangement.onNotesChange`.
+- Persistence (`app.js` + `util/storage.js`): `synzzz:settings:v1` (panel controls, waveform index, BPM) and `synzzz:take:v1` (`{ notes, duration }`). Saved on fader release / toggle, waveform or BPM change, and on every take change except while recording (saved when recording stops). Restored data is validated before use; bump the `:v1` suffix if the shape changes.
 - `component/visualizer.js` — one rAF loop for both canvases; reads `synth.analyser` (post-clipper, i.e. what is heard).
-- `util/` — `note-frequencies.js` (keys `C3`…`B5`, insertion order = pitch order), `key-bindings.js` (`event.code` → note), `waveforms.js`, `rotated-panel.js`.
+- `util/` — `note-frequencies.js` (keys `C3`…`B5`, insertion order = pitch order), `key-bindings.js` (`event.code` → note), `waveforms.js`, `rotated-panel.js`, `storage.js` (`loadJSON` / `saveJSON`, never throw).
 - `instrument/` — unfinished OOP instrument hierarchy, not imported anywhere. Each `Instrument` creates its own `AudioContext`; inject the shared one before wiring it in.
 
 ## Conventions

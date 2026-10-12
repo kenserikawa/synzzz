@@ -22,13 +22,15 @@ export default class Arrangement {
         this.queue = [];
         this.nextIndex = 0;
         this.passStart = 0;
-        this.onChange = () => {};
+        this.onChange = () => {};      // transport state changed (play, stop, loop)
+        this.onNotesChange = () => {}; // the take itself changed (loaded or edited)
     }
 
     load(notes, duration) {
         this.stop();
         this.notes = notes;
         this.duration = duration;
+        this.onNotesChange();
     }
 
     getNotes() {
@@ -45,10 +47,15 @@ export default class Arrangement {
         this.notes.splice(index, 1);
         if (this.notes.length === 0) this.stop();
         this.onChange();
+        this.onNotesChange();
     }
 
-    moveNote(index, newTime) {
-        this.notes[index].time = Math.max(0, newTime);
+    // Change a note's start time and/or pitch: updateNote(i, { time, note }).
+    updateNote(index, { time, note }) {
+        const entry = this.notes[index];
+        if (time !== undefined) entry.time = Math.max(0, time);
+        if (note !== undefined && note in this.noteFrequencies) entry.note = note;
+        this.onNotesChange();
     }
 
     sortedNotes() {

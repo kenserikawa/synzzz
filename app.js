@@ -9,6 +9,14 @@ import Visualizer from "./component/visualizer.js";
 import { noteFrequencies } from "./util/note-frequencies.js";
 import { waveforms } from "./util/waveforms.js";
 import { fitRotatedPanel } from "./util/rotated-panel.js";
+import { loadJSON, saveJSON } from "./util/storage.js";
+
+const SETTINGS_KEY = 'synzzz:settings:v1';
+const TAKE_KEY = 'synzzz:take:v1';
+const CONTROL_IDS = [
+    'volume-toggle', 'volume-fader', 'delay-toggle', 'delay-fader',
+    'reverb-toggle', 'reverb-fader', 'chorus-toggle', 'chorus-fader',
+];
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
 
@@ -36,14 +44,61 @@ const playableNotes = [...piano.querySelectorAll('.key')].map(key => key.dataset
 const synth = new Synth(audioContext);
 const recorder = new Recorder(audioContext);
 const arrangement = new Arrangement(audioContext, synth, noteFrequencies);
-const arrangementView = new ArrangementView(arrangement, $('arrangement-view'), playableNotes);
+const arrangementView = new ArrangementView(arrangement, $('arrangement-view'), playableNotes, {
+    // Let a note dragged to a new pitch be heard.
+    onPreview: note => synth.playNote(noteFrequencies[note], audioContext.currentTime, 0.15),
+});
 const visualizer = new Visualizer(synth.analyser, $('waveformCanvas'), $('eqCanvas'));
 
-new Metronome(audioContext, {
+// ── Saved state (localStorage) ───────────────────────────────────────────────
+
+const settings = loadJSON(SETTINGS_KEY, {});
+let settingsRestored = false; // don't save half-restored state while starting up
+
+function saveSettings() {
+    if (!settingsRestored) return;
+    saveJSON(SETTINGS_KEY, {
+        controls: Object.fromEntries(CONTROL_IDS.map(id => {
+            const element = $(id);
+            return [id, element.type === 'checkbox' ? element.checked : element.valueAsNumber];
+        })),
+        wave: waveIndex,
+        bpm: metronome.getBPM(),
+    });
+}
+
+function restoreControls(saved = {}) {
+    for (const id of CONTROL_IDS) {
+        const element = $(id);
+        const value = saved[id];
+        if (element.type === 'checkbox' && typeof value === 'boolean') element.checked = value;
+        if (element.type === 'range' && Number.isFinite(value)) element.value = value;
+    }
+}
+
+// The last take, recorded or edited; a new recording replaces it.
+function saveTake() {
+    saveJSON(TAKE_KEY, { notes: arrangement.getNotes(), duration: arrangement.duration });
+}
+
+function restoreTake() {
+    const take = loadJSON(TAKE_KEY, null);
+    const playable = new Set(playableNotes);
+    const notes = (Array.isArray(take?.notes) ? take.notes : [])
+        .filter(n => playable.has(n?.note) && Number.isFinite(n.time) && Number.isFinite(n.duration)
+            && n.time >= 0 && n.duration >= 0)
+        .map(({ note, time, duration }) => ({ note, time, duration }));
+    if (notes.length > 0) arrangement.load(notes, Number.isFinite(take.duration) ? take.duration : 0);
+}
+
+const metronome = new Metronome(audioContext, {
     bpmDisplay: $('bpm-display'),
     tapButton: $('tap-button'),
     metronomeButton: $('metronome-button'),
-    onBpmChange: bpm => arrangementView.setBpm(bpm),
+    onBpmChange: bpm => {
+        arrangementView.setBpm(bpm);
+        saveSettings();
+    },
 });
 
 new Keyboard(piano, {
@@ -59,11 +114,15 @@ new Keyboard(piano, {
 
 // ── Panel controls ───────────────────────────────────────────────────────────
 
-// Apply the control's current value now (browsers restore form state on reload) and on every change.
+restoreControls(settings.controls);
+
+// Apply the control's current value now and on every change; save once it settles
+// ('change' fires when a fader is released).
 const bind = (id, eventName, apply) => {
     const element = $(id);
     apply(element);
     element.addEventListener(eventName, () => apply(element));
+    element.addEventListener('change', saveSettings);
 };
 
 bind('volume-toggle', 'change', el => synth.setMuted(!el.checked));
@@ -77,7 +136,7 @@ bind('chorus-fader', 'input', el => synth.setChorusAmount(el.valueAsNumber / 100
 
 const waveIcon = document.querySelector('.wave-icon');
 const waveName = document.querySelector('.wave-name');
-let waveIndex = 0;
+let waveIndex = Number.isInteger(settings.wave) && waveforms[settings.wave] ? settings.wave : 0;
 
 function selectWave(step) {
     waveIndex = (waveIndex + step + waveforms.length) % waveforms.length;
@@ -85,6 +144,7 @@ function selectWave(step) {
     waveIcon.textContent = wave.icon;
     waveName.textContent = wave.name;
     synth.setWaveType(wave.value);
+    saveSettings();
 }
 
 document.querySelector('.nav-button.left').addEventListener('click', () => selectWave(-1));
@@ -141,6 +201,14 @@ loopButton.addEventListener('click', () => {
     arrangement.setLooping(!arrangement.isLooping);
     if (arrangement.isLooping && !arrangement.isPlaying) arrangement.play();
 });
+
+if (Number.isFinite(settings.bpm)) metronome.setBPM(settings.bpm);
+settingsRestored = true;
+
+restoreTake();
+arrangement.onNotesChange = () => {
+    if (!recorder.isRecording) saveTake(); // a take in progress is saved when it stops
+};
 
 fitRotatedPanel(document.querySelector('.piano-stage'), document.querySelector('.piano-container'));
 arrangementView.render();

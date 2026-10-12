@@ -4,15 +4,18 @@ const LABEL_WIDTH = 36;
 const MIN_NOTE_WIDTH = 6;
 const MIN_VISIBLE_SECONDS = 8;
 const DRAG_THRESHOLD = 3;   // px before a press on a note counts as a drag
-const NUDGE = 0.05;         // seconds per arrow key press (×10 with Shift)
+const NUDGE = 0.05;         // seconds per ←/→ press (×10 with Shift)
+const OCTAVE = 12;          // rows per ↑/↓ press with Shift
 
 // Piano-roll view of the arrangement: one row per playable note (high notes on top),
-// time running left to right. Notes can be dragged in time, nudged with the arrow keys
-// and removed with a double click or Delete.
+// time running left to right. Notes can be dragged in time (horizontally) and in pitch
+// (vertically), moved with the arrow keys and removed with a double click or Delete.
+// `onPreview(note)` is called when a note lands on a new pitch, to let it be heard.
 export default class ArrangementView {
-    constructor(arrangement, element, notes) {
+    constructor(arrangement, element, notes, { onPreview = () => {} } = {}) {
         this.arrangement = arrangement;
         this.element = element;
+        this.onPreview = onPreview;
         this.rows = [...notes].reverse();
         this.rowIndex = new Map(this.rows.map((note, i) => [note, i]));
         this.drag = null;
@@ -89,7 +92,7 @@ export default class ArrangementView {
             element.tabIndex = 0;
             element.setAttribute('role', 'button');
             element.setAttribute('aria-label', `${entry.note} at ${entry.time.toFixed(2)} s`);
-            element.title = `${entry.note} · ${entry.time.toFixed(2)} s · double-click or Delete to remove`;
+            element.title = `${entry.note} · ${entry.time.toFixed(2)} s · drag to move or change pitch · double-click or Delete to remove`;
             element.style.left = `${this.timeToX(entry.time)}px`;
             element.style.top = `${row * ROW_HEIGHT}px`;
             element.style.width = `${Math.max(MIN_NOTE_WIDTH, entry.duration * PIXELS_PER_SECOND)}px`;
@@ -105,33 +108,52 @@ export default class ArrangementView {
             const element = noteFrom(event);
             if (!element || event.button !== 0) return;
             element.setPointerCapture(event.pointerId);
+            const index = Number(element.dataset.index);
+            const row = this.rowIndex.get(this.arrangement.getNotes()[index].note);
             this.drag = {
                 element,
-                index: Number(element.dataset.index),
+                index,
                 startX: event.clientX,
+                startY: event.clientY,
                 startLeft: element.offsetLeft,
                 left: element.offsetLeft,
+                startRow: row,
+                row,
                 moved: false,
             };
         });
 
         this.notesLayer.addEventListener('pointermove', event => {
-            if (!this.drag) return;
-            const dx = event.clientX - this.drag.startX;
-            if (!this.drag.moved && Math.abs(dx) < DRAG_THRESHOLD) return;
-            this.drag.moved = true;
-            this.drag.left = Math.max(LABEL_WIDTH, this.drag.startLeft + dx);
-            this.drag.element.classList.add('dragging');
-            this.drag.element.style.left = `${this.drag.left}px`;
+            const drag = this.drag;
+            if (!drag) return;
+            const dx = event.clientX - drag.startX;
+            const dy = event.clientY - drag.startY;
+            if (!drag.moved && Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_THRESHOLD) return;
+            drag.moved = true;
+            drag.element.classList.add('dragging');
+
+            drag.left = Math.max(LABEL_WIDTH, drag.startLeft + dx);
+            drag.element.style.left = `${drag.left}px`;
+
+            const row = this.clampRow(drag.startRow + Math.round(dy / ROW_HEIGHT));
+            if (row !== drag.row) {
+                drag.row = row;
+                drag.element.style.top = `${row * ROW_HEIGHT}px`;
+                drag.element.textContent = this.rows[row];
+                this.onPreview(this.rows[row]);
+            }
         });
 
         // Uses the stored position: a render() during the drag (recording) detaches the element.
         const endDrag = () => {
             if (!this.drag) return;
-            const { index, left, moved } = this.drag;
+            const { index, left, row, moved } = this.drag;
             this.drag = null;
             if (!moved) return;
-            this.arrangement.moveNote(index, (left - LABEL_WIDTH) / PIXELS_PER_SECOND);
+            this.arrangement.updateNote(index, {
+                time: (left - LABEL_WIDTH) / PIXELS_PER_SECOND,
+                note: this.rows[row],
+            });
             this.render();
         };
         this.notesLayer.addEventListener('pointerup', endDrag);
@@ -153,11 +175,25 @@ export default class ArrangementView {
             } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 event.preventDefault();
                 const step = (event.key === 'ArrowLeft' ? -NUDGE : NUDGE) * (event.shiftKey ? 10 : 1);
-                this.arrangement.moveNote(index, this.arrangement.getNotes()[index].time + step);
+                this.arrangement.updateNote(index, { time: this.arrangement.getNotes()[index].time + step });
+                this.render();
+                this.focusNote(index);
+            } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                // Rows run high → low, so "up" is a smaller row index.
+                const step = (event.key === 'ArrowUp' ? -1 : 1) * (event.shiftKey ? OCTAVE : 1);
+                const current = this.rowIndex.get(this.arrangement.getNotes()[index].note);
+                const note = this.rows[this.clampRow(current + step)];
+                this.arrangement.updateNote(index, { note });
+                this.onPreview(note);
                 this.render();
                 this.focusNote(index);
             }
         });
+    }
+
+    clampRow(row) {
+        return Math.min(this.rows.length - 1, Math.max(0, row));
     }
 
     removeNote(index) {

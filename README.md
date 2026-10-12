@@ -10,7 +10,8 @@
 - **Master volume and mute**
 - **Oscilloscope and spectrum (EQ) screens** showing what you hear
 - **Metronome** with accented downbeat and tap tempo
-- **Recorder and piano roll**: record a take, play it back or loop it, drag notes in time, nudge them with the arrow keys and delete them with a double click or Delete
+- **Recorder and piano roll**: record a take, play it back or loop it. Drag a note sideways to move it in time and up or down to change its pitch (or use the arrow keys; Shift moves by 0.5 s or an octave), and delete it with a double click or Delete
+- **Remembers your setup**: effect and volume settings, waveform, tempo and the last take are saved in the browser (localStorage) and restored on the next visit. A new recording replaces the saved take
 
 ## Getting started
 
@@ -53,6 +54,7 @@ util/
   key-bindings.js     computer key → note
   waveforms.js        waveform list for the selector
   rotated-panel.js    rotated synth panel on phones in portrait
+  storage.js          localStorage helpers that never throw
 instrument/           work in progress, not used by the app yet
 ```
 
